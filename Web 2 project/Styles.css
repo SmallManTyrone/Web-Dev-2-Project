@@ -1,0 +1,243 @@
+/* Reset some default browser styles */
+body, h1, h2, p {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f4f4f4;
+}
+
+.movie-cms-box {
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin: 20px auto;
+    padding: 20px;
+    border-radius: 5px;
+    max-width: 800px; /* Center the content and limit its width */
+}
+
+h1 {
+    font-size: 36px;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.movie-header {
+    margin-bottom: 20px;
+}
+
+.nav-link {
+    text-decoration: none;
+    color: #007bff;
+    font-weight: bold;
+    margin-right: 20px;
+    padding: 10px 20px; /* Add padding to make it look like a button */
+    border: 2px solid #007bff; /* Add a border */
+    background-color: transparent; /* Make the background transparent */
+    border-radius: 5px; /* Round the corners */
+    transition: background-color 0.3s, color 0.3s;
+    display: inline-block; /* Display as an inline block */
+}
+
+.nav-link:hover {
+    background-color: #007bff; /* Change background color on hover */
+    color: #fff; /* Change text color on hover */
+}
+
+
+.movie-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.movie {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    width: calc(33.33% - 20px);
+    box-sizing: border-box;
+    border-radius: 5px;
+    transition: transform 0.3s;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+.movie:hover {
+    transform: translateY(-5px);
+}
+
+h2 a {
+    text-decoration: none;
+    color: #333;
+    font-size: 20px;
+    transition: color 0.3s;
+    margin-bottom: 10px;
+}
+
+h2 a:hover {
+    color: #007bff;
+}
+
+p {
+    font-size: 16px;
+    margin-top: 15px;
+    color: #555;
+}
+
+/* Style the movie poster image */
+img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 5px;
+}
+
+/* Custom styles for movie details */
+.movie-details {
+    display: none;
+    background-color: #f4f4f4;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: left;
+    font-size: 14px;
+}
+
+.movie:hover .movie-details {
+    display: block;
+}
+
+/* Style the edit form */
+.movie-edit-form {
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin: 20px auto;
+    padding: 20px;
+    border-radius: 5px;
+    max-width: 500px; /* Center the content and limit its width */
+}
+
+.movie-edit-form h2 {
+    font-size: 28px;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.movie-edit-form label {
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.movie-edit-form input[type="text"],
+.movie-edit-form textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.movie-edit-form button {
+    background-color: #007bff;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.movie-edit-form button:hover {
+    background-color: #0056b3;
+}
+
+/* Style the "Edit" button */
+.edit-button {
+    display: inline-block;
+    padding: 5px 10px;
+    background-color: #007bff;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    margin-top: 10px;
+    transition: background-color 0.3s;
+}
+
+.edit-button:hover {
+    background-color: #0056b3;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+    .movie-cms-box, .movie-edit-form {
+        width: 90%;
+        max-width: none;
+    }
+    .movie-list {
+        flex-direction: column;
+        align-items: center;
+    }
+    .movie {
+        width: 100%;
+    }
+    button, button.delete, .edit-button {
+        width: 100%;
+    }
+}
+
+.movie-details-and-edit {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Style the movie details */
+.movie-details {
+    background-color: #f4f4f4;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: left;
+    font-size: 14px;
+}
+
+/* Style the edit form */
+.movie-edit-form {
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    border-radius: 5px;
+}
+
+/* Style the navigation menu */
+.navigation-menu {
+    list-style-type: none;
+    padding: 0;
+    background-color: #333; /* Background color for the entire menu */
+    display: flex; /* Use flexbox to control spacing */
+    align-items: center; /* Vertically align items */
+}
+
+.navigation-menu li {
+    margin-right: 20px; /* Adjust the spacing between menu items */
+}
+
+.navigation-menu li a {
+    text-decoration: none;
+    color: #fff; /* Text color for menu items */
+    font-weight: bold;
+    padding: 10px 20px;
+    border: 2px solid #007bff;
+    border-radius: 5px;
+    transition: background-color 0.3s, color 0.3s;
+    display: inline-block; /* Ensure each menu item is displayed inline */
+}
+
+.navigation-menu li a:hover {
+    background-color: #007bff; /* Change background color on hover */
+    color: #fff; /* Change text color on hover */
+}
