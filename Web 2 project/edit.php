@@ -41,7 +41,7 @@ if (isset($_GET['id']) && isInteger($_GET['id'])) {
         $runtime = $result['Runtime'];
         $director = $result['Director'];
         $actors = $result['Actors'];
-        $actors = $result['Genre'];
+        $genre = $result['Genre'];
 
         // Retrieve and encode the movie poster data
         $posterData = $result['Movie_Poster'];

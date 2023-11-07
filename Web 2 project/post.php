@@ -7,8 +7,6 @@ Description: Movie Listing Page
 
 require('authenticate.php');
 
-
-
 $servername = "localhost"; // Replace with your database server
 $username = "serveruser"; // Replace with your database username
 $password = "gorgonzola7!"; // Replace with your database password
@@ -22,8 +20,6 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-
-
 // Handle new movie submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = $_POST['title'];
@@ -33,42 +29,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $language = $_POST['language'];
     $runtime = $_POST['runtime'];
     $genre = $_POST['genre'];
+    $director = $_POST['director'];
+    $actors = $_POST['actors'];
+
+    var_dump($_FILES['movie_poster']); 
 
     // Check for file upload errors
     if ($_FILES['movie_poster']['error'] === UPLOAD_ERR_OK) {
-        $tempFile = $_FILES['movie_poster']['tmp_name'];
-        $targetPath = 'path_to_your_upload_directory/' . $_FILES['movie_poster']['name'];
+        // Read the file content
+        $moviePoster = file_get_contents($_FILES['movie_poster']['tmp_name']);
 
-        // Move the uploaded file to its final location
-        if (move_uploaded_file($tempFile, $targetPath)) {
-            $moviePoster = base64_encode(file_get_contents($targetPath));
+        // Validate and sanitize the input as needed
 
-            $director = $_POST['director'];
-            $actors = $_POST['actors'];
+        // Insert the movie into the database
+        $sql = "INSERT INTO movie (Title, Release_Date, Age_Rating, Description, Language, Runtime, Movie_Poster, Director, Actors, Genre) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ssssssssss", $title, $releaseDate, $ageRating, $description, $language, $runtime, $moviePoster, $director, $actors, $genre);
 
-            // Validate and sanitize the input as needed
-
-            // Insert the movie into the database
-            $sql = "INSERT INTO movie (Title, Release_Date, Age_Rating, Description, Language, Runtime, Movie_Poster, Director, Actors, Genre) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("sssssssss", $title, $releaseDate, $ageRating, $description, $language, $runtime, $moviePoster, $director, $actors, $genre);
-
-            if ($stmt->execute()) {
-                // Movie added successfully
-                header("Location: index.php");
-                exit();
-            } else {
-                echo "Error: " . $stmt->error;
-            }
-
-            $stmt->close();
+        if ($stmt->execute()) {
+            // Movie added successfully
+            header("Location: index.php");
+            exit();
         } else {
-            echo "Error moving the uploaded file.";
+            echo "Database error: " . $stmt->error;
         }
+
+        $stmt->close();
     } else {
         echo "File upload error: " . $_FILES['movie_poster']['error'];
     }
 }
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
