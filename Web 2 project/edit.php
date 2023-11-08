@@ -40,7 +40,7 @@ if (isset($_GET['id']) && isInteger($_GET['id'])) {
         $director = $result['Director'];
         $actors = $result['Actors'];
         $posterData = $result['Movie_Poster'];
-        
+
         // Retrieve the list of genres associated with the movie
         $genreSql = "SELECT genre.name FROM genre
                      INNER JOIN movie_genre ON genre.genre_id = movie_genre.genre_id
@@ -61,10 +61,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate and sanitize the input as needed
     $title = filter_input(INPUT_POST, 'title', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     $description = filter_input(INPUT_POST, 'description', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    
+
     // Retrieve and process the genres from the form submission
     $genresInput = $_POST['genres'];
     $genresArray = array_map('trim', explode(',', $genresInput));
+
+    if (isset($_POST['removeImage']) && $_POST['removeImage'] === "1") {
+        // Set the posterData to an empty value or null
+        $posterData = null; // or $posterData = ''; to ensure it's empty
+    }
 
     if (isset($_POST['delete'])) {
         // Delete the movie from the database
@@ -73,41 +78,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $deleteStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
 
         if ($deleteStmt->execute()) {
+            echo "Movie deleted successfully.";
             // Movie deleted successfully, redirect to the index page
             header("Location: index.php");
             exit();
         } else {
-            error_log("Error deleting the movie: " . $deleteStmt->errorInfo()[2]);
-            echo "An error occurred while deleting the movie.";
+            echo "Error deleting the movie: " . $deleteStmt->errorInfo()[2];
         }
     } else {
- // Update the movie in the database, including genres
-$updateSql = "UPDATE movie SET 
-Title = :title, 
-Release_Date = :releaseDate, 
-Age_Rating = :ageRating, 
-Description = :description, 
-Language = :language, 
-Runtime = :runtime, 
-Movie_Poster = :posterData, 
-Director = :director, 
-Actors = :actors
-WHERE MovieID = :movieId";
+        // Handle file upload
+        if ($_FILES['movie_poster']['error'] === UPLOAD_ERR_OK) {
+            // Get the uploaded file's temporary name and read its contents
+            $posterTmpName = $_FILES['movie_poster']['tmp_name'];
+            $posterData = file_get_contents($posterTmpName);
+        }
 
-$updateStmt = $conn->prepare($updateSql);
+        // Update the movie in the database, including genres
+        $updateSql = "UPDATE movie SET 
+            Title = :title, 
+            Release_Date = :releaseDate, 
+            Age_Rating = :ageRating, 
+            Description = :description, 
+            Language = :language, 
+            Runtime = :runtime, 
+            Movie_Poster = :posterData, 
+            Director = :director, 
+            Actors = :actors
+            WHERE MovieID = :movieId";
 
-$updateStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
-$updateStmt->bindParam(':title', $title, PDO::PARAM_STR);
-$updateStmt->bindParam(':releaseDate', $releaseDate, PDO::PARAM_STR);
-$updateStmt->bindParam(':ageRating', $ageRating, PDO::PARAM_STR);
-$updateStmt->bindParam(':description', $description, PDO::PARAM_STR);
-$updateStmt->bindParam(':language', $language, PDO::PARAM_STR);
-$updateStmt->bindParam(':runtime', $runtime, PDO::PARAM_STR);
-$updateStmt->bindParam(':posterData', $posterData, PDO::PARAM_LOB);
-$updateStmt->bindParam(':director', $director, PDO::PARAM_STR);
-$updateStmt->bindParam(':actors', $actors, PDO::PARAM_STR);
+        $updateStmt = $conn->prepare($updateSql);
+
+        $updateStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
+        $updateStmt->bindParam(':title', $title, PDO::PARAM_STR);
+        $updateStmt->bindParam(':releaseDate', $releaseDate, PDO::PARAM_STR);
+        $updateStmt->bindParam(':ageRating', $ageRating, PDO::PARAM_STR);
+        $updateStmt->bindParam(':description', $description, PDO::PARAM_STR);
+        $updateStmt->bindParam(':language', $language, PDO::PARAM_STR);
+        $updateStmt->bindParam(':runtime', $runtime, PDO::PARAM_STR);
+        $updateStmt->bindParam(':posterData', $posterData, PDO::PARAM_LOB);
+        $updateStmt->bindParam(':director', $director, PDO::PARAM_STR);
+        $updateStmt->bindParam(':actors', $actors, PDO::PARAM_STR);
 
         if ($updateStmt->execute()) {
+            echo "Movie updated successfully.";
             // Movie updated successfully, handle genre associations
 
             // Delete existing genre associations for the movie
@@ -119,7 +132,7 @@ $updateStmt->bindParam(':actors', $actors, PDO::PARAM_STR);
             // Then, insert the new genre associations
             $updateGenreSql = "INSERT INTO movie_genre (movie_id, genre_id) VALUES (:movieId, :genreId)";
             $updateGenreStmt = $conn->prepare($updateGenreSql);
-            
+
             foreach ($genresArray as $genreName) {
                 // First, find the genre ID based on the genre name
                 $findGenreSql = "SELECT genre_id FROM genre WHERE name = :genreName";
@@ -127,7 +140,7 @@ $updateStmt->bindParam(':actors', $actors, PDO::PARAM_STR);
                 $findGenreStmt->bindParam(':genreName', $genreName, PDO::PARAM_STR);
                 $findGenreStmt->execute();
                 $genreId = $findGenreStmt->fetchColumn();
-            
+
                 if ($genreId) {
                     // Associate the genre with the movie
                     $updateGenreStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
@@ -135,17 +148,17 @@ $updateStmt->bindParam(':actors', $actors, PDO::PARAM_STR);
                     $updateGenreStmt->execute();
                 }
             }
-        
+
             // Redirect to the index page or the movie details page
             header("Location: index.php?id=$movieId");
             exit();
         } else {
-            error_log("Error updating the movie: " . $updateStmt->errorInfo()[2]);
-            echo "An error occurred while updating the movie.";
+            echo "Error updating the movie: " . $updateStmt->errorInfo()[2];
         }
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -171,46 +184,41 @@ $updateStmt->bindParam(':actors', $actors, PDO::PARAM_STR);
             <p>Actors: <?= $actors ?></p>
             <img src="data:image/jpeg;base64,<?= base64_encode($posterData) ?>" alt="Movie Poster">
         </div>
-
         <!-- Edit form -->
         <div class="movie-edit-form">
             <h2>Edit Movie</h2>
             <form action="edit.php?id=<?php echo $movieId; ?>" method="post" enctype="multipart/form-data">
                 <label for="title">Title:</label>
                 <input type="text" id="title" name="title" value="<?= $title; ?>" required>
-
                 <label for="releaseDate">Release Date:</label>
                 <input type="text" id="releaseDate" name="releaseDate" value="<?= $releaseDate; ?>" required>
-
                 <label for="ageRating">Age Rating:</label>
                 <input type="text" id="ageRating" name="ageRating" value="<?= $ageRating; ?>" required>
-
                 <label for="description">Description:</label>
                 <textarea id="description" name="description" required><?= $description; ?></textarea>
-
                 <label for="language">Language:</label>
                 <input type="text" id="language" name="language" value="<?= $language; ?>" required>
-
                 <label for="runtime">Runtime:</label>
                 <input type="text" id="runtime" name="runtime" value="<?= $runtime; ?>" required>
-
                 <label for="director">Director:</label>
                 <input type="text" id="director" name="director" value="<?= $director; ?>" required>
-
                 <label for="actors">Actors:</label>
                 <input type="text" id="actors" name="actors" value="<?= $actors; ?>" required>
-
-                
                 <label for="genres">Genres:</label>
                 <input type="text" id="genres" name="genres" value="<?= implode(', ', $genres); ?>"
                     placeholder="Enter genres (e.g., Action, Comedy, Drama)">
 
+                    <?php if (!empty($posterData)) { ?>
+    <label for="removeImage">Remove Image:</label>
+    <input type="checkbox" id="removeImage" name="removeImage" value="1">
+        <?php } ?>
+        
+   
+
                 <label for="movie_poster">Movie Poster:</label>
                 <input type="file" id="movie_poster" name="movie_poster">
-
                 <button type="submit">Update</button>
                 <button type="submit" name="delete">Delete Movie</button>
-
             </form>
         </div>
     </div>

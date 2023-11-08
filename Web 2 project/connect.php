@@ -16,4 +16,17 @@
          // When deploying to production you should handle this
          // situation more gracefully. ¯\_(ツ)_/¯
      }
+
+     function isUsernameExists($conn, $username) {
+        $sql = "SELECT * FROM user WHERE Username = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        $result = $stmt->get_result();
+    
+        return $result->num_rows > 0;
+    }
+    
+
+
  ?>

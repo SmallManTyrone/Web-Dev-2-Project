@@ -31,9 +31,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sortOrder = $_POST['order'];
 }
 
-// SQL query with sorting options
-$sql = "SELECT * FROM movie ORDER BY $sortColumn $sortOrder";
+// Modify the SQL query to include genre information
+$sql = "SELECT movie.*, GROUP_CONCAT(genre.name SEPARATOR ', ') AS genre_list
+        FROM movie
+        LEFT JOIN movie_genre ON movie.MovieID = movie_genre.movie_id
+        LEFT JOIN genre ON movie_genre.genre_id = genre.genre_id
+        GROUP BY movie.MovieID
+        ORDER BY $sortColumn $sortOrder";
+
 $result = $conn->query($sql);
+
 ?>
 
 <!DOCTYPE html>
@@ -71,37 +78,40 @@ $result = $conn->query($sql);
             </form>
         </div>
         <div class="movie-list">
-            <?php
-            if ($result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    $movieId = $row["MovieID"];
-                    $title = $row["Title"];
-                    $releaseDate = $row["Release_Date"];
-                    $ageRating = $row["Age_Rating"];
-                    $description = $row["Description"];
-                    $language = $row["Language"];
-                    $runtime = $row["Runtime"];
-                    $poster = $row["Movie_Poster"];
-                    $director = $row["Director"];
-                    $actors = $row["Actors"];
-                    $genre = $row["Genre"];
-            ?>
-            <div class="movie">
-                <h2><a href='show.php?id=<?= $movieId ?>'><?= $title ?></a></h2>
-                <p>Release Date: <?= $releaseDate ?></p>
-                <p>Age Rating: <?= $ageRating ?></p>
-                <p>Description: <?= $description ?></p>
-                <p>Language: <?= $language ?></p>
-                <p>Runtime: <?= $runtime ?></p>
-                <p>Director: <?= $director ?></p>
-                <p>Actors: <?= $actors ?></p>
-                <p>Genre: <?= $genre ?></p>
-                <img src="data:image/jpeg;base64,<?= base64_encode($poster) ?>" alt="Movie Poster" width="200">
-            </div>
-            <?php
-                }
-            }
-            ?>
+        <?php
+if ($result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $movieId = $row["MovieID"];
+        $title = $row["Title"];
+        $releaseDate = $row["Release_Date"];
+        $ageRating = $row["Age_Rating"];
+        $description = $row["Description"];
+        $language = $row["Language"];
+        $runtime = $row["Runtime"];
+        $poster = $row["Movie_Poster"];
+        $director = $row["Director"];
+        $actors = $row["Actors"];
+        $genre = $row["genre_list"]; // Update the key to "genre_list"
+?>
+<div class="movie">
+    <h2><a href='show.php?id=<?= $movieId ?>'><?= $title ?></a></h2>
+    <p>Release Date: <?= $releaseDate ?></p>
+    <p>Age Rating: <?= $ageRating ?></p>
+    <p>Description: <?= $description ?></p>
+    <p>Language: <?= $language ?></p>
+    <p>Runtime: <?= $runtime ?></p>
+    <p>Director: <?= $director ?></p>
+    <p>Actors: <?= $actors ?></p>
+    <p>Genres: <?= $genre ?></p> <!-- Update the key to "genre_list" -->
+    <img src="data:image/jpeg;base64,<?= base64_encode($poster) ?>" alt="Movie Poster" width="200">
+</div>
+<?php
+    }
+}
+?>
+
+               
+        
         </div>
     </div>
 </body>

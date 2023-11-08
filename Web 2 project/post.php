@@ -35,80 +35,82 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $genresInput = $_POST['genres'];
     $genresArray = array_map('trim', explode(',', $genresInput));
 
+    // Initialize moviePoster as null (no file uploaded)
+    $moviePoster = null;
+
     // Check for file upload errors
     if ($_FILES['movie_poster']['error'] === UPLOAD_ERR_OK) {
         // Read the file content
         $moviePoster = file_get_contents($_FILES['movie_poster']['tmp_name']);
+    }
 
-        // Insert the movie into the database
-        $sql = "INSERT INTO movie (Title, Release_Date, Age_Rating, Description, Language, Runtime, Movie_Poster, Director, Actors) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sssssssss", $title, $releaseDate, $ageRating, $description, $language, $runtime, $moviePoster, $director, $actors);
+    // Insert the movie into the database
+    $sql = "INSERT INTO movie (Title, Release_Date, Age_Rating, Description, Language, Runtime, Movie_Poster, Director, Actors) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("sssssssss", $title, $releaseDate, $ageRating, $description, $language, $runtime, $moviePoster, $director, $actors);
 
-        if ($stmt->execute()) {
-            // Movie added successfully
-            $movieId = $stmt->insert_id; // Get the ID of the inserted movie
+    if ($stmt->execute()) {
+        // Movie added successfully
+        $movieId = $stmt->insert_id; // Get the ID of the inserted movie
 
-            // Initialize an array to store genre IDs
-            $genreIds = [];
+        // Initialize an array to store genre IDs
+        $genreIds = [];
 
-            foreach ($genresArray as $genre) {
-                // Sanitize and validate the genre as needed
-                $genre = trim($genre);
+        foreach ($genresArray as $genre) {
+            // Sanitize and validate the genre as needed
+            $genre = trim($genre);
 
-                // Check if the genre already exists in the "genre" table
-                $genreCheckSql = "SELECT genre_id FROM genre WHERE name = ?";
-                $genreCheckStmt = $conn->prepare($genreCheckSql);
-                $genreCheckStmt->bind_param("s", $genre);
-                $genreCheckStmt->execute();
-                $genreCheckStmt->store_result();
+            // Check if the genre already exists in the "genre" table
+            $genreCheckSql = "SELECT genre_id FROM genre WHERE name = ?";
+            $genreCheckStmt = $conn->prepare($genreCheckSql);
+            $genreCheckStmt->bind_param("s", $genre);
+            $genreCheckStmt->execute();
+            $genreCheckStmt->store_result();
 
-                if ($genreCheckStmt->num_rows > 0) {
-                    $genreCheckStmt->bind_result($genreId);
-                    $genreCheckStmt->fetch();
-                    // The genre already exists, use its ID
-                    $genreIds[] = $genreId;
-                } else {
-                    $genreInsertSql = "INSERT INTO genre (name) VALUES (?)";
-                    $genreInsertStmt = $conn->prepare($genreInsertSql);
-                    $genreInsertStmt->bind_param("s", $genre);
-                    $genreInsertStmt->execute();
+            if ($genreCheckStmt->num_rows > 0) {
+                $genreCheckStmt->bind_result($genreId);
+                $genreCheckStmt->fetch();
+                // The genre already exists, use its ID
+                $genreIds[] = $genreId;
+            } else {
+                $genreInsertSql = "INSERT INTO genre (name) VALUES (?)";
+                $genreInsertStmt = $conn->prepare($genreInsertSql);
+                $genreInsertStmt->bind_param("s", $genre);
+                $genreInsertStmt->execute();
 
-                    $genreId = $conn->insert_id;
-                    $genreIds[] = $genreId;
-                }
-
-                // Close the statement for checking and inserting genres
-                $genreCheckStmt->close();
+                $genreId = $conn->insert_id;
+                $genreIds[] = $genreId;
             }
 
-            // Insert genres and associate them with the movie in the "movie_genre" junction table
-            foreach ($genreIds as $genreId) {
-                $movieGenreSql = "INSERT INTO movie_genre (movie_id, genre_id) VALUES (?, ?)";
-                $movieGenreStmt = $conn->prepare($movieGenreSql);
-                $movieGenreStmt->bind_param("ii", $movieId, $genreId);
-                $movieGenreStmt->execute();
-                $movieGenreStmt->close();
-            }
-
-            header("Location: index.php");
-            exit();
-        } else {
-            echo "Database error: " . $stmt->error;
+            // Close the statement for checking and inserting genres
+            $genreCheckStmt->close();
         }
 
-        $stmt->close();
+        // Insert genres and associate them with the movie in the "movie_genre" junction table
+        foreach ($genreIds as $genreId) {
+            $movieGenreSql = "INSERT INTO movie_genre (movie_id, genre_id) VALUES (?, ?)";
+            $movieGenreStmt = $conn->prepare($movieGenreSql);
+            $movieGenreStmt->bind_param("ii", $movieId, $genreId);
+            $movieGenreStmt->execute();
+            $movieGenreStmt->close();
+        }
+
+        header("Location: index.php");
+        exit();
     } else {
-        echo "File upload error: " . $_FILES['movie_poster']['error'];
+        echo "Database error: " . $stmt->error;
     }
+
+    $stmt->close();
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE-edge">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="Styles.css">
     <title>Movie CMS</title>
@@ -137,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="text" id="runtime" name="runtime" required>
 
             <label for="movie_poster">Movie Poster:</label>
-            <input type="file" id="movie_poster" name="movie_poster" required>
+            <input type="file" id="movie_poster" name="movie_poster">
 
             <label for="director">Director:</label>
             <input type="text" id="director" name="director" required>

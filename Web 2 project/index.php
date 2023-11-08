@@ -87,14 +87,19 @@ $result = $conn->query($sql);
 
 
         
-            if (isLoggedIn() || isAdminLoggedIn()) {
-                echo '<li><a href="post.php">Add Movie</a></li>';
-                echo '<li><a href="view-list.php">View Movies</a></li>';
-                echo '<li><a href="logout.php">Log Out</a></li>';
-            } else {
-                echo '<li><a href="register.php">Make Account</a></li>';
-                echo '<li><a href="login.php">Login</a></li>';
-            }
+if (isAdminLoggedIn()) {
+    echo '<li><a href="post.php">Add Movie</a></li>';
+    echo '<li><a href="sort-list.php">Sort Movies</a></li>';
+    echo '<li><a href="logout.php">Log Out</a></li>';
+    echo '<li><a href="user-management.php">User Management</a>'; // Show the link only for admin
+} else if (isLoggedIn()) { // Separate condition for regular users
+    echo '<li><a href="post.php">Add Movie</a></li>';
+    echo '<li><a href="sort-list.php">Sort Movies</a></li>';
+    echo '<li><a href="logout.php">Log Out</a></li>';
+} else {
+    echo '<li><a href="register.php">Make Account</a></li>';
+    echo '<li><a href="login.php">Login</a></li>';
+}
             ?>
         </ul>
         <div class="movie-header"></div>
