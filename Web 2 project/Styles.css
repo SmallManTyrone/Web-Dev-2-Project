@@ -242,3 +242,9 @@ img {
     color: #fff; /* Change text color on hover */
 }
 
+.success-message {
+    background-color: #4CAF50; /* Green background color */
+    color: rgb(3, 3, 3); /* White text color */
+    padding: 10px; /* Add some padding for spacing */
+    text-align: center; /* Center-align the text */
+}

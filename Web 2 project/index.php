@@ -7,11 +7,10 @@ Description: Movie Listing Page
 
 require('authenticate.php');
 
-if (isset($_SESSION['login_message'])) {
-    echo '<div>' . $_SESSION['login_message'] . '</div>';
-    // Clear the login message so it's not displayed again on page refresh
-    unset($_SESSION['login_message']);
-}
+
+
+// Check if the login success message is set
+
 
 $servername = "localhost"; // Replace with your database server
 $username = "serveruser"; // Replace with your database username
@@ -51,6 +50,8 @@ $sql = "SELECT movie.*, GROUP_CONCAT(genre.name SEPARATOR ', ') AS genre_list
 $result = $conn->query($sql);
 
 
+
+
 ?>
 
 <!DOCTYPE html>
@@ -60,15 +61,32 @@ $result = $conn->query($sql);
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
+    <script src="script.js"></script>
+    
     <title>Movies</title>
+   
+
 </head>
 
 <body>
     <div class="movie-cms-box">
         <h1>Welcome to Movie CMS</h1>
+        <?php
+        if (isset($_SESSION['login_success']) && $_SESSION['login_success'] === true) {
+    echo '<div class="success-message-container" id="successMessageContainer">';
+    echo '<div class="success-message">Login was successful! Click anywhere to close.</div>';
+    echo '</div>';
+    $_SESSION['login_success'] = false;
+   
+}
+?>
         <ul class="navigation-menu">
             <li><a href="index.php">Home</a></li>
             <?php
+
+
+
+        
             if (isLoggedIn() || isAdminLoggedIn()) {
                 echo '<li><a href="post.php">Add Movie</a></li>';
                 echo '<li><a href="view-list.php">View Movies</a></li>';
