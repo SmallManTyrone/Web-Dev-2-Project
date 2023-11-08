@@ -28,26 +28,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $description = $_POST['description'];
     $language = $_POST['language'];
     $runtime = $_POST['runtime'];
-    $genre = $_POST['genre'];
     $director = $_POST['director'];
     $actors = $_POST['actors'];
 
-    var_dump($_FILES['movie_poster']); 
+    // Retrieve and sanitize the genres input
+    $genresInput = $_POST['genres'];
+    $genresArray = array_map('trim', explode(',', $genresInput));
 
     // Check for file upload errors
     if ($_FILES['movie_poster']['error'] === UPLOAD_ERR_OK) {
         // Read the file content
         $moviePoster = file_get_contents($_FILES['movie_poster']['tmp_name']);
 
-        // Validate and sanitize the input as needed
-
         // Insert the movie into the database
-        $sql = "INSERT INTO movie (Title, Release_Date, Age_Rating, Description, Language, Runtime, Movie_Poster, Director, Actors, Genre) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO movie (Title, Release_Date, Age_Rating, Description, Language, Runtime, Movie_Poster, Director, Actors) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssssssssss", $title, $releaseDate, $ageRating, $description, $language, $runtime, $moviePoster, $director, $actors, $genre);
+        $stmt->bind_param("sssssssss", $title, $releaseDate, $ageRating, $description, $language, $runtime, $moviePoster, $director, $actors);
 
         if ($stmt->execute()) {
             // Movie added successfully
+            $movieId = $stmt->insert_id; // Get the ID of the inserted movie
+
+            // Initialize an array to store genre IDs
+            $genreIds = [];
+
+            foreach ($genresArray as $genre) {
+                // Sanitize and validate the genre as needed
+                $genre = trim($genre);
+
+                // Check if the genre already exists in the "genre" table
+                $genreCheckSql = "SELECT genre_id FROM genre WHERE name = ?";
+                $genreCheckStmt = $conn->prepare($genreCheckSql);
+                $genreCheckStmt->bind_param("s", $genre);
+                $genreCheckStmt->execute();
+                $genreCheckStmt->store_result();
+
+                if ($genreCheckStmt->num_rows > 0) {
+                    $genreCheckStmt->bind_result($genreId);
+                    $genreCheckStmt->fetch();
+                    // The genre already exists, use its ID
+                    $genreIds[] = $genreId;
+                } else {
+                    $genreInsertSql = "INSERT INTO genre (name) VALUES (?)";
+                    $genreInsertStmt = $conn->prepare($genreInsertSql);
+                    $genreInsertStmt->bind_param("s", $genre);
+                    $genreInsertStmt->execute();
+
+                    $genreId = $conn->insert_id;
+                    $genreIds[] = $genreId;
+                }
+
+                // Close the statement for checking and inserting genres
+                $genreCheckStmt->close();
+            }
+
+            // Insert genres and associate them with the movie in the "movie_genre" junction table
+            foreach ($genreIds as $genreId) {
+                $movieGenreSql = "INSERT INTO movie_genre (movie_id, genre_id) VALUES (?, ?)";
+                $movieGenreStmt = $conn->prepare($movieGenreSql);
+                $movieGenreStmt->bind_param("ii", $movieId, $genreId);
+                $movieGenreStmt->execute();
+                $movieGenreStmt->close();
+            }
+
             header("Location: index.php");
             exit();
         } else {
@@ -59,7 +102,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo "File upload error: " . $_FILES['movie_poster']['error'];
     }
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -103,8 +145,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <label for="actors">Actors:</label>
             <input type="text" id="actors" name="actors" required>
 
-            <label for="genre">Genre:</label>
-            <input type="text" id="genre" name="genre" required>
+            <label for="genres">Genres:</label>
+            <input type="text" id="genres" name="genres" placeholder="Enter genres (e.g., Action, Comedy, Drama)">
 
             <button type="submit">Add Movie</button>
         </form>

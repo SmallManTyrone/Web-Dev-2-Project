@@ -2,10 +2,16 @@
 /*
 Name: Tyson La
 Date: September 20th
-Description: Blog Home Page
+Description: Movie Listing Page
 */
 
 require('authenticate.php');
+
+if (isset($_SESSION['login_message'])) {
+    echo '<div>' . $_SESSION['login_message'] . '</div>';
+    // Clear the login message so it's not displayed again on page refresh
+    unset($_SESSION['login_message']);
+}
 
 $servername = "localhost"; // Replace with your database server
 $username = "serveruser"; // Replace with your database username
@@ -19,7 +25,6 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
-
 
 if (isset($_SESSION['username'])) {
     $username = $_SESSION['username'];
@@ -36,82 +41,60 @@ if (isset($_SESSION['username'])) {
     echo 'Hello, Guest';
 }
 
+// Query to retrieve the most recent movie data along with associated genres
+$sql = "SELECT movie.*, GROUP_CONCAT(genre.name SEPARATOR ', ') AS genre_list
+        FROM movie
+        LEFT JOIN movie_genre ON movie.MovieID = movie_genre.movie_id
+        LEFT JOIN genre ON movie_genre.genre_id = genre.genre_id
+        GROUP BY movie.MovieID";
 
-
-
-// Query to retrieve the most recent blog posts
-$sql = "SELECT * FROM movie"; // Update the table name to match your database structure
 $result = $conn->query($sql);
+
 
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE-edge">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="Styles.css"> <!-- Include your CSS file for styling -->
-    <title>Welcome to Movie CMS!</title>
-
+    <link rel="stylesheet" href="styles.css">
+    <title>Movies</title>
 </head>
 
 <body>
-
-    <!-- Movie CMS header -->
     <div class="movie-cms-box">
         <h1>Welcome to Movie CMS</h1>
-        <?php
-
-
-    
-
-    
-
-
-    ?>
-
-
         <ul class="navigation-menu">
             <li><a href="index.php">Home</a></li>
             <?php
-
-
-if (isLoggedIn() || isAdminLoggedIn()) {
-    // Show links for both users and admins
-    echo '<li><a href="post.php">Add Movie</a></li>';
-    echo '<li><a href="view-list.php">View Movies</a></li>';
-    echo '<li><a href="logout.php">Log Out</a></li>'; // Add the logout link here
-}
-
-            
-
-    
-    
-            
+            if (isLoggedIn() || isAdminLoggedIn()) {
+                echo '<li><a href="post.php">Add Movie</a></li>';
+                echo '<li><a href="view-list.php">View Movies</a></li>';
+                echo '<li><a href="logout.php">Log Out</a></li>';
+            } else {
+                echo '<li><a href="register.php">Make Account</a></li>';
+                echo '<li><a href="login.php">Login</a></li>';
+            }
             ?>
-            <li><a href="register.php">Make Account</a></li>
-            <li><a href="login.php">Login</a></li>
         </ul>
-        <div class="movie-header">
-
-        </div>
+        <div class="movie-header"></div>
         <div class="movie-list">
             <?php
-    if ($result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            $movieId = $row["MovieID"];
-            $title = $row["Title"];
-            $releaseDate = $row["Release_Date"];
-            $ageRating = $row["Age_Rating"];
-            $description = $row["Description"];
-            $language = $row["Language"];
-            $runtime = $row["Runtime"];
-            $poster = $row["Movie_Poster"];
-            $director = $row["Director"];
-            $actors = $row["Actors"];
-            $genre = $row["Genre"];
+            if ($result->num_rows > 0) {
+                while ($row = $result->fetch_assoc()) {
+                    $movieId = $row["MovieID"];
+                    $title = $row["Title"];
+                    $releaseDate = $row["Release_Date"];
+                    $ageRating = $row["Age_Rating"];
+                    $description = $row["Description"];
+                    $language = $row["Language"];
+                    $runtime = $row["Runtime"];
+                    $poster = $row["Movie_Poster"];
+                    $director = $row["Director"];
+                    $actors = $row["Actors"];
+                    $genres = $row["genre_list"]; // List of associated genres
             ?>
             <div class="movie">
                 <h2><a href='show.php?id=<?= $movieId ?>'><?= $title ?></a></h2>
@@ -122,7 +105,7 @@ if (isLoggedIn() || isAdminLoggedIn()) {
                 <p>Runtime: <?= $runtime . " Minutes"?></p>
                 <p>Director: <?= $director ?></p>
                 <p>Actors: <?= $actors ?></p>
-                <p>Genre: <?= $genre ?></p>
+                <p>Genres: <?= $genres ?></p> <!-- Display associated genres here -->
 
                 <!-- Display the movie poster here -->
                 <img src="data:image/jpeg;base64,<?= base64_encode($poster) ?>" alt="Movie Poster" width="200">
@@ -131,15 +114,12 @@ if (isLoggedIn() || isAdminLoggedIn()) {
                     echo '<a href="edit.php?id=' . $movieId . '" class="edit-button">edit</a>';
                 }
                 ?>
-
             </div>
             <?php
-            
+            }
         }
-    }
-    ?>
+        ?>
         </div>
     </div>
 </body>
-
 </html>
