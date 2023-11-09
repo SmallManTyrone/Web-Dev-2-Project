@@ -142,14 +142,13 @@ img {
     border-radius: 5px;
 }
 
-.movie-edit-form button {
-    background-color: #007bff;
-    color: #fff;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
+/* Style for the "Edit" form */
+.movie-edit-form {
+    display: inline-block;
+    width: 45%; /* Adjust the width as needed */
+    vertical-align: top;
+    padding: 10px;
+    border: 1px solid #ccc;
 }
 
 .movie-edit-form button:hover {
@@ -190,11 +189,6 @@ img {
     }
 }
 
-.movie-details-and-edit {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
 
 /* Style the movie details */
 .movie-details {
@@ -252,3 +246,62 @@ img {
 .hide-remove-image {
     display: none;
 }
+
+.form-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.form-group label {
+    width: 120px; /* Adjust this width as needed */
+    text-align: right;
+    margin-right: 10px;
+}
+
+.form-group input {
+    flex: 1;
+}
+
+.form-group pre {
+    flex: 1;
+    white-space: pre-wrap;
+}
+
+/* Style the container for movie details, edit form, and preview */
+.movie-details-and-edit {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+/* Style the movie details */
+.movie-details {
+    background-color: #f4f4f4;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: left;
+    font-size: 14px;
+    flex: 1;
+}
+
+/* Style the edit form */
+.movie-edit-form {
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    border-radius: 5px;
+    flex: 1;
+}
+
+/* Style the preview section */
+.movie-details-preview {
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    border-radius: 5px;
+    flex: 1;
+}
+
+

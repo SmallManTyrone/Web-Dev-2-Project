@@ -14,6 +14,8 @@ try {
     die("Connection failed: " . $e->getMessage());
 }
 
+
+
 // Function to validate if a string is an integer
 function isInteger($str) {
     return preg_match('/^[0-9]+$/', $str);
@@ -30,25 +32,26 @@ if (isset($_GET['id']) && isInteger($_GET['id'])) {
     $stmt->execute();
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($result) {
-        $title = $result['Title'];
-        $releaseDate = $result['Release_Date'];
-        $ageRating = $result['Age_Rating'];
-        $description = $result['Description'];
-        $language = $result['Language'];
-        $runtime = $result['Runtime'];
-        $director = $result['Director'];
-        $actors = $result['Actors'];
-        $posterData = $result['Movie_Poster'];
+    $ownersql = "SELECT movie.*, user_movie.UserID as ownerUserID 
+        FROM movie
+        LEFT JOIN user_movie ON movie.MovieID = user_movie.MovieID
+        WHERE movie.MovieID = :movieId";
+    $ownerstmt = $conn->prepare($ownersql);
+    $ownerstmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
+    $ownerstmt->execute();
+    $ownerresult = $ownerstmt->fetch(PDO::FETCH_ASSOC);
 
-        // Retrieve the list of genres associated with the movie
-        $genreSql = "SELECT genre.name FROM genre
-                     INNER JOIN movie_genre ON genre.genre_id = movie_genre.genre_id
-                     WHERE movie_genre.movie_id = :movieId";
-        $genreStmt = $conn->prepare($genreSql);
-        $genreStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
-        $genreStmt->execute();
-        $genres = $genreStmt->fetchAll(PDO::FETCH_COLUMN);
+    if ($ownerresult) {
+        $title = $ownerresult['Title'];
+        $releaseDate = $ownerresult['Release_Date'];
+        $ageRating = $ownerresult['Age_Rating'];
+        $description = $ownerresult['Description'];
+        $language = $ownerresult['Language'];
+        $runtime = $ownerresult['Runtime'];
+        $director = $ownerresult['Director'];
+        $actors = $ownerresult['Actors'];
+        $posterData = $ownerresult['Movie_Poster'];
+        $movieUserID = $ownerresult['ownerUserID'];
     } else {
         // Invalid or non-existent ID, redirect to the index page
         header("Location: index.php");
@@ -56,11 +59,45 @@ if (isset($_GET['id']) && isInteger($_GET['id'])) {
     }
 }
 
+// Debug: Print out admin-related session variables
+echo "Admin ID in Session: " . (isset($_SESSION['admin_id']) ? $_SESSION['admin_id'] : 'Not set') . "<br>";
+echo "Is Admin in Session: " . (isset($_SESSION['is_admin']) ? $_SESSION['is_admin'] : 'Not set') . "<br>";
+
+
+
+
+// Check if the currently logged-in user is an admin
+$userIsAdmin = isset( $_SESSION['is_admin']) === true;
+
+
+// Check if the currently logged-in user is the owner of the movie post
+$userIsOwner = false;
+$loggedInUserId = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
+
+if ($loggedInUserId && $movieUserID && $loggedInUserId == $movieUserID) {
+    $userIsOwner = true;
+}
+
+// Retrieve the list of genres associated with the movie
+$genreSql = "SELECT genre.name FROM genre
+             INNER JOIN movie_genre ON genre.genre_id = movie_genre.genre_id
+             WHERE movie_genre.movie_id = :movieId";
+$genreStmt = $conn->prepare($genreSql);
+$genreStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
+$genreStmt->execute();
+$genres = $genreStmt->fetchAll(PDO::FETCH_COLUMN);
+
 // Handle form submission for updating or deleting the movie
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate and sanitize the input as needed
     $title = filter_input(INPUT_POST, 'title', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     $description = filter_input(INPUT_POST, 'description', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $releaseDate = filter_input(INPUT_POST, 'releaseDate', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $ageRating = filter_input(INPUT_POST, 'ageRating', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $language = filter_input(INPUT_POST, 'language', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $runtime = filter_input(INPUT_POST, 'runtime', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $director = filter_input(INPUT_POST, 'director', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $actors = filter_input(INPUT_POST, 'actors', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
     // Retrieve and process the genres from the form submission
     $genresInput = $_POST['genres'];
@@ -71,7 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $posterData = null; // or $posterData = ''; to ensure it's empty
     }
 
-    if (isset($_POST['delete'])) {
+    if (isset($_POST['delete']) && $userIsOwner ) {
         // Delete the movie from the database
         $deleteSql = "DELETE FROM movie WHERE MovieID = :movieId";
         $deleteStmt = $conn->prepare($deleteSql);
@@ -85,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             echo "Error deleting the movie: " . $deleteStmt->errorInfo()[2];
         }
-    } else {
+    } elseif ($userIsOwner || $userIsAdmin) {
         // Handle file upload
         if ($_FILES['movie_poster']['error'] === UPLOAD_ERR_OK) {
             // Get the uploaded file's temporary name and read its contents
@@ -95,16 +132,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Update the movie in the database, including genres
         $updateSql = "UPDATE movie SET 
-            Title = :title, 
-            Release_Date = :releaseDate, 
-            Age_Rating = :ageRating, 
-            Description = :description, 
-            Language = :language, 
-            Runtime = :runtime, 
-            Movie_Poster = :posterData, 
-            Director = :director, 
-            Actors = :actors
-            WHERE MovieID = :movieId";
+        Title = :title, 
+        Release_Date = :releaseDate, 
+        Age_Rating = :ageRating, 
+        Description = :description, 
+        Language = :language, 
+        Runtime = :runtime, 
+        Movie_Poster = :posterData, 
+        Director = :director, 
+        Actors = :actors
+        WHERE MovieID = :movieId";
 
         $updateStmt = $conn->prepare($updateSql);
 
@@ -157,6 +194,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+// Debug: Print out user information
+
+echo "User Is Admin: " . ($userIsAdmin ? 'Yes' : 'No') . "<br>";
+echo "User Is Owner: " . ($userIsOwner ? 'Yes' : 'No') . "<br>";
+
+echo "User Is Owner: " . ($userIsOwner ? 'Yes' : 'No') . "<br>";
+echo "Movie Owner UserID: " . $movieUserID . "<br>";
+echo "Logged-in User ID: " . $loggedInUserId . "<br>";
+
+if ($userIsOwner) {
+    echo "User is the owner.";
+} else {
+    echo "User is not the owner.";
+}
+
+if ($userIsAdmin) {
+    echo "User is an admin.";
+} elseif ($userIsOwner) {
+    echo "User is the owner.";
+} else {
+    echo "User is not an admin and not the owner.";
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -167,10 +228,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta http-equiv="X-UA-Compatible" content="IE-edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="Styles.css">
+    <script src="preview.js"></script>
     <title>Movie CMS</title>
 </head>
 
 <body>
+<li><a href="index.php">Home</a></li>
     <div class="movie-details-and-edit">
         <!-- Movie details -->
         <div class="movie-details">
@@ -187,7 +250,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Edit form -->
         <div class="movie-edit-form">
             <h2>Edit Movie</h2>
-            <form action="edit.php?id=<?php echo $movieId; ?>" method="post" enctype="multipart/form-data">
+            <form action="edit.php?id=<?= $movieId; ?>" method="post" enctype="multipart/form-data">
                 <label for="title">Title:</label>
                 <input type="text" id="title" name="title" value="<?= $title; ?>" required>
                 <label for="releaseDate">Release Date:</label>
@@ -204,24 +267,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <input type="text" id="director" name="director" value="<?= $director; ?>" required>
                 <label for="actors">Actors:</label>
                 <input type="text" id="actors" name="actors" value="<?= $actors; ?>" required>
-                <label for="genres">Genres:</label>
-                <input type="text" id="genres" name="genres" value="<?= implode(', ', $genres); ?>"
-                    placeholder="Enter genres (e.g., Action, Comedy, Drama)">
-
-                    <?php if (!empty($posterData)) { ?>
-    <label for="removeImage">Remove Image:</label>
-    <input type="checkbox" id="removeImage" name="removeImage" value="1">
-        <?php } ?>
-        
-   
-
+                <!-- Add more input fields as needed -->
+                <input type="text" id="genres" name="genres" value="<?= implode(', ', $genres); ?>" placeholder="Enter genres (e.g., Action, Comedy, Drama)">
+                <?php if (!empty($posterData)) { ?>
+                    <label for="removeImage">Remove Image:</label>
+                    <input type="checkbox" id="removeImage" name="removeImage" value="1">
+                <?php } ?>
                 <label for="movie_poster">Movie Poster:</label>
                 <input type="file" id="movie_poster" name="movie_poster">
-                <button type="submit">Update</button>
-                <button type="submit" name="delete">Delete Movie</button>
+                <?php if ($userIsAdmin || $userIsOwner) { ?>
+                    <button type="submit">Update</button>
+                    <button type="submit" name="delete">Delete Movie</button>
+                <?php } else { ?>
+                    <p>You are not authorized to delete this movie.</p>
+                    <p>You are not authorized to update this movie.</p>
+                <?php } ?>
             </form>
         </div>
+        <!-- Preview section -->
+        <div class="movie-details-preview">
+    <h2>Preview</h2>
+    <p><strong>Title:</strong> <span id="previewTitle"><?= $title ?></span></p>
+    <p><strong>Release Date:</strong> <span id="previewReleaseDate"><?= $releaseDate ?></span></p>
+    <p><strong>Age Rating:</strong> <span id="previewAgeRating"><?= $ageRating ?></span></p>
+    <p><strong>Description:</strong> <span id="previewDescription"><?= $description ?></span></p>
+    <p><strong>Language:</strong> <span id="previewLanguage"><?= $language ?></span></p>
+    <p><strong>Runtime:</strong> <span id="previewRuntime"><?= $runtime ?></span></p>
+    <p><strong>Director:</strong> <span id="previewDirector"><?= $director ?></span></p>
+    <p><strong>Actors:</strong> <span id="previewActors"><?= $actors ?></span></p>
+    <?php if (!empty($posterData)) : ?>
+        <p><strong>Movie Poster:</strong></p>
+        <img id="previewMoviePoster",<?= base64_encode($posterData) ?>" alt="Movie Poster">
+    <?php endif ?>
+</div>
     </div>
 </body>
-
 </html>

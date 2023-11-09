@@ -25,6 +25,8 @@ function isAdminLoggedIn() {
     return isset($_SESSION['is_admin']) && $_SESSION['is_admin'];
 }
 
+
+
 function authenticateAdmin($db, $username, $password) {
     // Check the 'admins' table for admin login
     $admin_sql = "SELECT * FROM admins WHERE Username = ?";
@@ -38,6 +40,7 @@ function authenticateAdmin($db, $username, $password) {
         $_SESSION['admin_id'] = $admin_result['AdminID'];
         $_SESSION['is_admin'] = true;
         $_SESSION['username'] = $username;
+        
         return true;
     }
 
@@ -56,14 +59,13 @@ function authenticateUser($db, $username, $password) {
     $stmt->bind_param('s', $username);
     $stmt->execute();
     $user_result = $stmt->get_result()->fetch_assoc();
-
+    
     // If the username exists in the 'users' table and the password is correct
     if ($user_result && password_verify($password, $user_result['Password'])) {
         $_SESSION['user_id'] = $user_result['UserID'];
         $_SESSION['is_admin'] = false;
         $_SESSION['username'] = $username;
         return true;
-        
     }
 
     return false;

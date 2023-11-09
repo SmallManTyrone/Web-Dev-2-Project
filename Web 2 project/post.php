@@ -78,59 +78,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("sssssssss", $title, $releaseDate, $ageRating, $description, $language, $runtime, $moviePoster, $director, $actors);
 
-    if ($stmt->execute()) {
-        // Movie added successfully
-        $movieId = $stmt->insert_id; // Get the ID of the inserted movie
+    // ... Your existing code ...
 
-        // Initialize an array to store genre IDs
-        $genreIds = [];
+if ($stmt->execute()) {
+    // Movie added successfully
+    $movieId = $stmt->insert_id; // Get the ID of the inserted movie
 
-        foreach ($genresArray as $genre) {
-            // Sanitize and validate the genre as needed
-            $genre = trim($genre);
+    // Initialize an array to store genre IDs
+    $genreIds = [];
 
-            // Check if the genre already exists in the "genre" table
-            $genreCheckSql = "SELECT genre_id FROM genre WHERE name = ?";
-            $genreCheckStmt = $conn->prepare($genreCheckSql);
-            $genreCheckStmt->bind_param("s", $genre);
-            $genreCheckStmt->execute();
-            $genreCheckStmt->store_result();
+    foreach ($genresArray as $genre) {
+        // Sanitize and validate the genre as needed
+        $genre = trim($genre);
 
-            if ($genreCheckStmt->num_rows > 0) {
-                $genreCheckStmt->bind_result($genreId);
-                $genreCheckStmt->fetch();
-                // The genre already exists, use its ID
-                $genreIds[] = $genreId;
-            } else {
-                $genreInsertSql = "INSERT INTO genre (name) VALUES (?)";
-                $genreInsertStmt = $conn->prepare($genreInsertSql);
-                $genreInsertStmt->bind_param("s", $genre);
-                $genreInsertStmt->execute();
+        // Check if the genre already exists in the "genre" table
+        $genreCheckSql = "SELECT genre_id FROM genre WHERE name = ?";
+        $genreCheckStmt = $conn->prepare($genreCheckSql);
+        $genreCheckStmt->bind_param("s", $genre);
+        $genreCheckStmt->execute();
+        $genreCheckStmt->store_result();
 
-                $genreId = $conn->insert_id;
-                $genreIds[] = $genreId;
-            }
+        if ($genreCheckStmt->num_rows > 0) {
+            $genreCheckStmt->bind_result($genreId);
+            $genreCheckStmt->fetch();
+            // The genre already exists, use its ID
+            $genreIds[] = $genreId;
+        } else {
+            $genreInsertSql = "INSERT INTO genre (name) VALUES (?)";
+            $genreInsertStmt = $conn->prepare($genreInsertSql);
+            $genreInsertStmt->bind_param("s", $genre);
+            $genreInsertStmt->execute();
 
-            // Close the statement for checking and inserting genres
-            $genreCheckStmt->close();
+            $genreId = $conn->insert_id;
+            $genreIds[] = $genreId;
         }
 
-        // Insert genres and associate them with the movie in the "movie_genre" junction table
-        foreach ($genreIds as $genreId) {
-            $movieGenreSql = "INSERT INTO movie_genre (movie_id, genre_id) VALUES (?, ?)";
-            $movieGenreStmt = $conn->prepare($movieGenreSql);
-            $movieGenreStmt->bind_param("ii", $movieId, $genreId);
-            $movieGenreStmt->execute();
-            $movieGenreStmt->close();
-        }
-
-        header("Location: index.php");
-        exit();
-    } else {
-        echo "Database error: " . $stmt->error;
+        // Close the statement for checking and inserting genres
+        $genreCheckStmt->close();
     }
 
-    $stmt->close();
+    // Insert genres and associate them with the movie in the "movie_genre" junction table
+    foreach ($genreIds as $genreId) {
+        $movieGenreSql = "INSERT INTO movie_genre (movie_id, genre_id) VALUES (?, ?)";
+        $movieGenreStmt = $conn->prepare($movieGenreSql);
+        $movieGenreStmt->bind_param("ii", $movieId, $genreId);
+        $movieGenreStmt->execute();
+        $movieGenreStmt->close();
+    }
+
+    // Insert the user-movie relationship into the "user_movie" table
+    if (isLoggedIn()) {
+        $userId = $_SESSION['user_id'];
+
+        $userMovieSql = "INSERT INTO user_movie (userid, movieid) VALUES (?, ?)";
+        $userMovieStmt = $conn->prepare($userMovieSql);
+        $userMovieStmt->bind_param("ii", $userId, $movieId);
+        $userMovieStmt->execute();
+        $userMovieStmt->close();
+    }
+
+    header("Location: index.php");
+    exit();
+} else {
+    echo "Database error: " . $stmt->error;
+}
+
+// Close the statement for inserting movies
+$stmt->close();
+
 }
 ?>
 
@@ -153,7 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="text" id="title" name="title" required>
 
             <label for="release_date">Release Date:</label>
-            <input type="text" id="release_date" name "release_date" required>
+            <input type="text" id="release_date" name="release_date" required>
 
             <label for="age_rating">Age Rating:</label>
             <input type="text" id="age_rating" name="age_rating" required>
