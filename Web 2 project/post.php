@@ -42,6 +42,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($_FILES['movie_poster']['error'] === UPLOAD_ERR_OK) {
         // Read the file content
         $moviePoster = file_get_contents($_FILES['movie_poster']['tmp_name']);
+        
+        // Add image resizing code
+        if (extension_loaded('gd')) {
+            list($origWidth, $origHeight) = getimagesize($_FILES['movie_poster']['tmp_name']);
+            $maxWidth = 500; // Define the maximum width for the poster
+            $maxHeight = 750; // Define the maximum height for the poster
+            
+            if ($origWidth > $maxWidth || $origHeight > $maxHeight) {
+                $ratio = $origWidth / $origHeight;
+                
+                if ($maxWidth / $maxHeight > $ratio) {
+                    $maxWidth = $maxHeight * $ratio;
+                } else {
+                    $maxHeight = $maxWidth / $ratio;
+                }
+
+                $resizedPoster = imagecreatetruecolor($maxWidth, $maxHeight);
+                $sourceImage = imagecreatefromstring($moviePoster);
+                
+                imagecopyresampled($resizedPoster, $sourceImage, 0, 0, 0, 0, $maxWidth, $maxHeight, $origWidth, $origHeight);
+
+                ob_start(); // Turn on output buffering
+                imagejpeg($resizedPoster, null, 90);
+                $moviePoster = ob_get_clean(); // Get the resized image content
+                imagedestroy($sourceImage);
+                imagedestroy($resizedPoster);
+            }
+        }
+        // End of image resizing code
     }
 
     // Insert the movie into the database
@@ -124,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="text" id="title" name="title" required>
 
             <label for="release_date">Release Date:</label>
-            <input type="text" id="release_date" name="release_date" required>
+            <input type="text" id="release_date" name "release_date" required>
 
             <label for="age_rating">Age Rating:</label>
             <input type="text" id="age_rating" name="age_rating" required>

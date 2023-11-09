@@ -109,27 +109,10 @@ if (isAdminLoggedIn()) {
                 while ($row = $result->fetch_assoc()) {
                     $movieId = $row["MovieID"];
                     $title = $row["Title"];
-                    $releaseDate = $row["Release_Date"];
-                    $ageRating = $row["Age_Rating"];
-                    $description = $row["Description"];
-                    $language = $row["Language"];
-                    $runtime = $row["Runtime"];
                     $poster = $row["Movie_Poster"];
-                    $director = $row["Director"];
-                    $actors = $row["Actors"];
-                    $genres = $row["genre_list"]; // List of associated genres
             ?>
             <div class="movie">
                 <h2><a href='show.php?id=<?= $movieId ?>'><?= $title ?></a></h2>
-                <p>Release Date: <?= $releaseDate ?></p>
-                <p>Age Rating: <?= $ageRating ?></p>
-                <p>Description: <?= $description ?></p>
-                <p>Language: <?= $language ?></p>
-                <p>Runtime: <?= $runtime . " Minutes"?></p>
-                <p>Director: <?= $director ?></p>
-                <p>Actors: <?= $actors ?></p>
-                <p>Genres: <?= $genres ?></p> <!-- Display associated genres here -->
-
                 <!-- Display the movie poster here -->
                 <img src="data:image/jpeg;base64,<?= base64_encode($poster) ?>" alt="Movie Poster" width="200">
                 <?php
