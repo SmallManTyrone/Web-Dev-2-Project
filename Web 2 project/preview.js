@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const previewRuntime = document.getElementById('previewRuntime');
     const previewDirector = document.getElementById('previewDirector');
     const previewActors = document.getElementById('previewActors');
+    const genresInput = document.getElementById('genres');
+    const previewGenres = document.getElementById('previewGenres');
     const previewMoviePoster = document.getElementById('previewMoviePoster'); // Image element for movie poster
 
     // Function to update the preview
@@ -30,6 +32,7 @@ document.addEventListener('DOMContentLoaded', function () {
         previewRuntime.textContent = runtimeInput.value;
         previewDirector.textContent = directorInput.value;
         previewActors.textContent = actorsInput.value;
+        previewGenres.textContent = genresInput.value; // Update genre preview
 
         // Display the movie poster if a file is selected
         if (moviePosterInput.files.length > 0) {
@@ -44,14 +47,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Add event listeners to the input fields to update the preview
     titleInput.addEventListener('input', updatePreview);
-    releaseDateInput.addEventListener('input', updatePreview);
-    ageRatingInput.addEventListener('input', updatePreview);
-    descriptionInput.addEventListener('input', updatePreview);
-    languageInput.addEventListener('input', updatePreview);
-    runtimeInput.addEventListener('input', updatePreview);
-    directorInput.addEventListener('input', updatePreview);
-    actorsInput.addEventListener('input', updatePreview);
-    moviePosterInput.addEventListener('change', updatePreview); // Listen for file selection
+titleInput.addEventListener('change', updatePreview);
+releaseDateInput.addEventListener('input', updatePreview);
+releaseDateInput.addEventListener('change', updatePreview);
+ageRatingInput.addEventListener('input', updatePreview);
+ageRatingInput.addEventListener('change', updatePreview);
+descriptionInput.addEventListener('input', updatePreview);
+descriptionInput.addEventListener('change', updatePreview);
+languageInput.addEventListener('input', updatePreview);
+languageInput.addEventListener('change', updatePreview);
+runtimeInput.addEventListener('input', updatePreview);
+runtimeInput.addEventListener('change', updatePreview);
+directorInput.addEventListener('input', updatePreview);
+directorInput.addEventListener('change', updatePreview);
+actorsInput.addEventListener('input', updatePreview);
+actorsInput.addEventListener('change', updatePreview);
+moviePosterInput.addEventListener('change', updatePreview); // Listen for file selection
+genresInput.addEventListener('input', updatePreview);
+genresInput.addEventListener('change', updatePreview);
 
     // Initial call to populate the preview with the default values
     updatePreview();

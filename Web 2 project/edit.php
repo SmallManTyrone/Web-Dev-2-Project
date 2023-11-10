@@ -64,10 +64,16 @@ echo "Admin ID in Session: " . (isset($_SESSION['admin_id']) ? $_SESSION['admin_
 echo "Is Admin in Session: " . (isset($_SESSION['is_admin']) ? $_SESSION['is_admin'] : 'Not set') . "<br>";
 
 
+if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true) {
+    // This block will execute if $_SESSION['is_admin'] is set to true
+    $userIsAdmin = true; // Optionally set a local variable to indicate admin status.
+} else {
+    $userIsAdmin = false; // Optionally set a local variable to indicate non-admin status.
+}
 
 
 // Check if the currently logged-in user is an admin
-$userIsAdmin = isset( $_SESSION['is_admin']) === true;
+
 
 
 // Check if the currently logged-in user is the owner of the movie post
@@ -233,7 +239,7 @@ if ($userIsAdmin) {
 </head>
 
 <body>
-<li><a href="index.php">Home</a></li>
+    <li><a href="index.php">Home</a></li>
     <div class="movie-details-and-edit">
         <!-- Movie details -->
         <div class="movie-details">
@@ -268,38 +274,44 @@ if ($userIsAdmin) {
                 <label for="actors">Actors:</label>
                 <input type="text" id="actors" name="actors" value="<?= $actors; ?>" required>
                 <!-- Add more input fields as needed -->
-                <input type="text" id="genres" name="genres" value="<?= implode(', ', $genres); ?>" placeholder="Enter genres (e.g., Action, Comedy, Drama)">
+                <input type="text" id="genres" name="genres" value="<?= implode(', ', $genres); ?>"
+                    placeholder="Enter genres (e.g., Action, Comedy, Drama)">
                 <?php if (!empty($posterData)) { ?>
-                    <label for="removeImage">Remove Image:</label>
-                    <input type="checkbox" id="removeImage" name="removeImage" value="1">
+                <label for="removeImage">Remove Image:</label>
+                <input type="checkbox" id="removeImage" name="removeImage" value="1">
                 <?php } ?>
                 <label for="movie_poster">Movie Poster:</label>
                 <input type="file" id="movie_poster" name="movie_poster">
-                <?php if ($userIsAdmin || $userIsOwner) { ?>
-                    <button type="submit">Update</button>
-                    <button type="submit" name="delete">Delete Movie</button>
-                <?php } else { ?>
-                    <p>You are not authorized to delete this movie.</p>
-                    <p>You are not authorized to update this movie.</p>
-                <?php } ?>
+                <?php if ($userIsAdmin || $userIsOwner) : ?>
+                <button type="submit">Update</button>
+                <?php if ($userIsOwner) : ?>
+                <button type="submit" name="delete">Delete Movie</button>
+                <?php endif; ?>
+                <?php else : ?>
+                <p>You are not authorized to delete or update this movie.</p>
+                <?php endif; ?>
+
             </form>
         </div>
         <!-- Preview section -->
         <div class="movie-details-preview">
-    <h2>Preview</h2>
-    <p><strong>Title:</strong> <span id="previewTitle"><?= $title ?></span></p>
-    <p><strong>Release Date:</strong> <span id="previewReleaseDate"><?= $releaseDate ?></span></p>
-    <p><strong>Age Rating:</strong> <span id="previewAgeRating"><?= $ageRating ?></span></p>
-    <p><strong>Description:</strong> <span id="previewDescription"><?= $description ?></span></p>
-    <p><strong>Language:</strong> <span id="previewLanguage"><?= $language ?></span></p>
-    <p><strong>Runtime:</strong> <span id="previewRuntime"><?= $runtime ?></span></p>
-    <p><strong>Director:</strong> <span id="previewDirector"><?= $director ?></span></p>
-    <p><strong>Actors:</strong> <span id="previewActors"><?= $actors ?></span></p>
-    <?php if (!empty($posterData)) : ?>
-        <p><strong>Movie Poster:</strong></p>
-        <img id="previewMoviePoster",<?= base64_encode($posterData) ?>" alt="Movie Poster">
-    <?php endif ?>
-</div>
+            <h2>Preview</h2>
+            <p><strong>Title:</strong> <span id="previewTitle"><?= $title ?></span></p>
+            <p><strong>Release Date:</strong> <span id="previewReleaseDate"><?= $releaseDate ?></span></p>
+            <p><strong>Age Rating:</strong> <span id="previewAgeRating"><?= $ageRating ?></span></p>
+            <p><strong>Description:</strong> <span id="previewDescription"><?= $description ?></span></p>
+            <p><strong>Language:</strong> <span id="previewLanguage"><?= $language ?></span></p>
+            <p><strong>Runtime:</strong> <span id="previewRuntime"><?= $runtime ?></span></p>
+            <p><strong>Director:</strong> <span id="previewDirector"><?= $director ?></span></p>
+            <p><strong>Actors:</strong> <span id="previewActors"><?= $actors ?></span></p>
+            <p><strong>Genres:</strong> <span id="previewGenres"><?= implode(', ', $genres) ?></span></p>
+
+            <?php if (!empty($posterData)) : ?>
+            <p><strong>Movie Poster:</strong></p>
+            <img id="previewMoviePoster" ,<?= base64_encode($posterData) ?> alt="Movie Poster">
+            <?php endif ?>
+        </div>
     </div>
 </body>
+
 </html>
