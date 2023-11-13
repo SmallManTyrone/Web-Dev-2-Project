@@ -12,6 +12,25 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+if (isset($_POST['viewCategory'])) {
+    $selectedCategoryId = $_POST['viewCategory'];
+
+    // Fetch category details from the database
+    $categoryDetailsSql = "SELECT * FROM categories WHERE category_id = ?";
+    $categoryDetailsStmt = $conn->prepare($categoryDetailsSql);
+    $categoryDetailsStmt->bind_param("i", $selectedCategoryId);
+    $categoryDetailsStmt->execute();
+    $categoryDetailsResult = $categoryDetailsStmt->get_result();
+
+    if ($categoryDetailsResult->num_rows > 0) {
+        $categoryDetailsRow = $categoryDetailsResult->fetch_assoc();
+        echo "<h3>Category Details</h3>";
+        echo "<p>Category ID: " . $categoryDetailsRow['category_id'] . "</p>";
+        echo "<p>Category Name: " . $categoryDetailsRow['category_name'] . "</p>";
+    } else {
+        echo "<p>No category found for the selected ID.</p>";
+    }
+}
 
 ?>
 
@@ -20,76 +39,94 @@ if ($conn->connect_error) {
 
 <head>
     <meta charset="UTF-8">
-    <title>Manage Genres</title>
+    <title>Manage Categories</title>
 </head>
 
 <body>
-    <h1>Manage Genres</h1>
+    <h1>Manage Categories</h1>
     <li><a href="index.php">Home</a></li>
 
-    <!-- Form for creating a new genre -->
-    <h2>Add New Genre</h2>
-    <form action="process_genre.php" method="post">
-        <label for="newGenre">Genre Name:</label>
-        <input type="text" id="newGenre" name="newGenre" required>
-        <button type="submit">Add Genre</button>
+    <!-- Form for creating a new category -->
+    <h2>Add New Category</h2>
+    <form action="process_category.php" method="post">
+        <label for="newCategory">Category Name:</label>
+        <input type="text" id="newCategory" name="newCategory" required>
+        <button type="submit">Add Category</button>
         <?php
-    if (isset($_GET['success']) && $_GET['success'] === 'newGenre') {
-        echo "<p>Genre added successfully!</p>";
-    }
-    ?>
+        if (isset($_GET['success']) && $_GET['success'] === 'newCategory') {
+            echo "<p>Category added successfully!</p>";
+        }
+        ?>
     </form>
 
-    <!-- Form for updating existing genres -->
-    <!-- Form for updating existing genres -->
-    <h2>Update Existing Genres</h2>
-    <form action="process_genre.php" method="post">
-        <label for="existingGenre">Select Genre to Update:</label>
-        <select id="existingGenre" name="existingGenre" required>
+    <!-- Form for updating existing categories -->
+    <h2>Update Existing Categories</h2>
+    <form action="process_category.php" method="post">
+        <label for="existingCategory">Select Category to Update:</label>
+        <select id="existingCategory" name="existingCategory" required>
             <?php
-        // Fetch genres from the database and populate the dropdown
-        $sql = "SELECT * FROM genre";
-        $result = $conn->query($sql);
-        if ($result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                echo "<option value='" . $row['genre_id'] . "'>" . $row['name'] . "</option>";
+            // Fetch categories from the database and populate the dropdown
+            $sql = "SELECT * FROM categories";
+            $result = $conn->query($sql);
+            if ($result->num_rows > 0) {
+                while ($row = $result->fetch_assoc()) {
+                    echo "<option value='" . $row['category_id'] . "'>" . $row['category_name'] . "</option>";
+                }
             }
+            ?>
+        </select>
+        <label for="updatedCategory">New Category Name:</label>
+        <input type="text" id="updatedCategory" name="updatedCategory" required>
+        <button type="submit">Update Category</button>
+        <?php
+        if (isset($_GET['success']) && $_GET['success'] === 'updatedCategory') {
+            echo "<p>Category updated successfully!</p>";
         }
         ?>
-        </select>
-        <label for="updatedGenre">New Genre Name:</label>
-        <input type="text" id="updatedGenre" name="updatedGenre" required>
-        <button type="submit">Update Genre</button>
-        <?php
-    if (isset($_GET['success']) && $_GET['success'] === 'updatedGenre') {
-        echo "<p>Genre updated successfully!</p>";
-    }
-    ?>
     </form>
 
-    <!-- Form for deleting a genre -->
-<h2>Delete Existing Genres</h2>
-<form action="process_genre.php" method="post">
-    <label for="deleteGenre">Select Genre to Delete:</label>
-    <select id="deleteGenre" name="deleteGenre" required>
-        <?php
-        // Fetch genres from the database and populate the dropdown for deletion
-        $sql = "SELECT * FROM genre";
-        $result = $conn->query($sql);
-        if ($result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                echo "<option value='" . $row['genre_id'] . "'>" . $row['name'] . "</option>";
+    <!-- Form for deleting a category -->
+    <h2>Delete Existing Categories</h2>
+    <form action="process_category.php" method="post">
+        <label for="deleteCategory">Select Category to Delete:</label>
+        <select id="deleteCategory" name="deleteCategory" required>
+            <?php
+            // Fetch categories from the database and populate the dropdown for deletion
+            $sql = "SELECT * FROM categories";
+            $result = $conn->query($sql);
+            if ($result->num_rows > 0) {
+                while ($row = $result->fetch_assoc()) {
+                    echo "<option value='" . $row['category_id'] . "'>" . $row['category_name'] . "</option>";
+                }
             }
+            ?>
+        </select>
+        <button type="submit" name="delete">Delete Category</button>
+        <?php
+        if (isset($_GET['success']) && $_GET['success'] === 'deleteCategory') {
+            echo "<p>Category deleted successfully!</p>";
         }
         ?>
-    </select>
-    <button type="submit" name="delete">Delete Genre</button>
-    <?php
-    if (isset($_GET['success']) && $_GET['success'] === 'deleteGenre') {
-        echo "<p>Genre deleted successfully!</p>";
-    }
-    ?>
-</form>
+    </form>
+
+    <!-- Form for viewing category details -->
+    <h2>View Current Categories</h2>
+    <form action="index.php" method="post">
+        <label for="viewCategory">Select Category to View:</label>
+        <select id="viewCategory" name="viewCategory">
+            <?php
+            // Fetch categories from the database and populate the dropdown for viewing
+            $sql = "SELECT * FROM categories";
+            $result = $conn->query($sql);
+            if ($result->num_rows > 0) {
+                while ($row = $result->fetch_assoc()) {
+                    echo "<option value='" . $row['category_id'] . "'>" . $row['category_name'] . "</option>";
+                }
+            }
+            ?>
+        </select>
+    </form>
+
 </body>
 
 </html>

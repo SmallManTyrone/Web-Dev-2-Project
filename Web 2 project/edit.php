@@ -14,7 +14,23 @@ try {
     die("Connection failed: " . $e->getMessage());
 }
 
+// Function to get the category name based on category ID
+function getCategoryName($categoryId, $conn)
+{
+    $sql = "SELECT category_name FROM categories WHERE category_id = :categoryId";
+    $stmt = $conn->prepare($sql);
+    $stmt->bindParam(':categoryId', $categoryId, PDO::PARAM_INT);
+    $stmt->execute();
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
+    // Check if the category is found
+    if ($result !== false) {
+        return $result['category_name'];
+    } else {
+        // If the category is not found, return the category ID as a fallback
+        return $categoryId;
+    }
+}
 
 // Function to validate if a string is an integer
 function isInteger($str) {
@@ -63,18 +79,12 @@ if (isset($_GET['id']) && isInteger($_GET['id'])) {
 echo "Admin ID in Session: " . (isset($_SESSION['admin_id']) ? $_SESSION['admin_id'] : 'Not set') . "<br>";
 echo "Is Admin in Session: " . (isset($_SESSION['is_admin']) ? $_SESSION['is_admin'] : 'Not set') . "<br>";
 
-
 if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true) {
     // This block will execute if $_SESSION['is_admin'] is set to true
     $userIsAdmin = true; // Optionally set a local variable to indicate admin status.
 } else {
     $userIsAdmin = false; // Optionally set a local variable to indicate non-admin status.
 }
-
-
-// Check if the currently logged-in user is an admin
-
-
 
 // Check if the currently logged-in user is the owner of the movie post
 $userIsOwner = false;
@@ -93,6 +103,18 @@ $genreStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
 $genreStmt->execute();
 $genres = $genreStmt->fetchAll(PDO::FETCH_COLUMN);
 
+// Fetch the actual category name from the database
+$categoryNameSql = "SELECT category_name FROM categories WHERE category_id = :categoryId";
+$categoryNameStmt = $conn->prepare($categoryNameSql);
+$categoryNameStmt->bindParam(':categoryId', $categoryId, PDO::PARAM_INT);
+$categoryNameStmt->execute();
+$categoryName = $categoryNameStmt->fetchColumn();
+
+echo "Debug - Retrieved Category ID: $categoryId";
+
+// If you want to fetch category name instead of ID, you can use the getCategoryName function
+$category = getCategoryName($categoryId, $conn);
+
 // Handle form submission for updating or deleting the movie
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate and sanitize the input as needed
@@ -104,10 +126,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $runtime = filter_input(INPUT_POST, 'runtime', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     $director = filter_input(INPUT_POST, 'director', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     $actors = filter_input(INPUT_POST, 'actors', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $selectedCategoryId = filter_input(INPUT_POST, 'category', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
-    // Retrieve and process the genres from the form submission
+    echo "Debug - Selected Category ID: $selectedCategoryId";
+    $category = getCategoryName($categoryId, $conn);
+
     $genresInput = $_POST['genres'];
-    $genresArray = array_map('trim', explode(',', $genresInput));
+    $submittedGenres = array_map('trim', explode(',', $genresInput));
+
+    // Retrieve the genres associated with the movie from the database
+    $currentGenresSql = "SELECT genre_id FROM movie_genre WHERE movie_id = :movieId";
+    $currentGenresStmt = $conn->prepare($currentGenresSql);
+    $currentGenresStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
+    $currentGenresStmt->execute();
+    $currentGenres = $currentGenresStmt->fetchAll(PDO::FETCH_COLUMN);
+
+    // Identify genres to be added and removed
+    $genresToAdd = array_diff($submittedGenres, $currentGenres);
+    $genresToRemove = array_diff($currentGenres, $submittedGenres);
+
+    // Add new genres
+    foreach ($submittedGenres as $genreName) {
+        $findGenreSql = "SELECT genre_id FROM genre WHERE name = :genreName";
+        $findGenreStmt = $conn->prepare($findGenreSql);
+        $findGenreStmt->bindParam(':genreName', $genreName, PDO::PARAM_STR);
+        $findGenreStmt->execute();
+        $genreId = $findGenreStmt->fetchColumn();
+
+        if ($genreId) {
+            $addGenreSql = "INSERT INTO movie_genre (movie_id, genre_id) VALUES (:movieId, :genreId)";
+            $addGenreStmt = $conn->prepare($addGenreSql);
+            $addGenreStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
+            $addGenreStmt->bindParam(':genreId', $genreId, PDO::PARAM_INT);
+            $addGenreStmt->execute();
+        }
+    }
+
+    // Remove old genres
+    foreach ($genresToRemove as $genreId) {
+        $removeGenreSql = "DELETE FROM movie_genre WHERE movie_id = :movieId AND genre_id = :genreId";
+        $removeGenreStmt = $conn->prepare($removeGenreSql);
+        $removeGenreStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
+        $removeGenreStmt->bindParam(':genreId', $genreId, PDO::PARAM_INT);
+        $removeGenreStmt->execute();
+    }
 
     if (isset($_POST['removeImage']) && $_POST['removeImage'] === "1") {
         // Set the posterData to an empty value or null
@@ -176,7 +238,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $updateGenreSql = "INSERT INTO movie_genre (movie_id, genre_id) VALUES (:movieId, :genreId)";
             $updateGenreStmt = $conn->prepare($updateGenreSql);
 
-            foreach ($genresArray as $genreName) {
+            foreach ($submittedGenres as $genreName) {
                 // First, find the genre ID based on the genre name
                 $findGenreSql = "SELECT genre_id FROM genre WHERE name = :genreName";
                 $findGenreStmt = $conn->prepare($findGenreSql);
@@ -193,16 +255,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // Redirect to the index page or the movie details page
-            header("Location: index.php?id=$movieId");
-            exit();
+           header("Location: index.php?id=$movieId");
+           exit();
         } else {
             echo "Error updating the movie: " . $updateStmt->errorInfo()[2];
         }
+
+        // If you want to fetch category name instead of ID, you can use the getCategoryName function
     }
 }
 
 // Debug: Print out user information
-
 echo "User Is Admin: " . ($userIsAdmin ? 'Yes' : 'No') . "<br>";
 echo "User Is Owner: " . ($userIsOwner ? 'Yes' : 'No') . "<br>";
 
@@ -224,7 +287,22 @@ if ($userIsAdmin) {
     echo "User is not an admin and not the owner.";
 }
 
+var_dump($categoryId); // Check the value of $categoryId
+echo getCategoryName($categoryId, $conn); // Check the result of getCategoryName
+
+// After processing the form submission
+$selectedCategoryId = isset($_POST['category']) ? $_POST['category'] : null;
+
+// Update $categoryId with the selected category ID
+$categoryId = $selectedCategoryId;
+
+// Retrieve the category name based on the selected category ID
+$selectedCategoryName = getCategoryName($selectedCategoryId, $conn); 
+
+
+ "Debug - Category Name: " . getCategoryName($selectedCategoryId, $conn); 
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -257,6 +335,32 @@ if ($userIsAdmin) {
         <div class="movie-edit-form">
             <h2>Edit Movie</h2>
             <form action="edit.php?id=<?= $movieId; ?>" method="post" enctype="multipart/form-data">
+                <p>Category:
+                    
+                    <?php
+                    
+        $allCategoriesSql = "SELECT * FROM categories";
+        $allCategoriesStmt = $conn->prepare($allCategoriesSql);
+        $allCategoriesStmt->execute();
+        $allCategories = $allCategoriesStmt->fetchAll(PDO::FETCH_ASSOC);
+        ?>
+                    <select name="category">
+                        <option value="">Select a category</option>
+                        <?php
+                        
+           foreach ($allCategories as $category) {
+            $categoryId = $category['category_id'];
+            $categoryName = $category['category_name'];
+            $isSelected = ($categoryId == $selectedCategoryId) ? 'selected' : '';
+            echo "<option value=\"$categoryId\" $isSelected>$categoryName</option>";
+        }
+
+       
+        
+            ?>
+                    </select>
+                </p>
+                
                 <label for="title">Title:</label>
                 <input type="text" id="title" name="title" value="<?= $title; ?>" required>
                 <label for="releaseDate">Release Date:</label>
@@ -292,10 +396,13 @@ if ($userIsAdmin) {
                 <?php endif; ?>
 
             </form>
+    
         </div>
+
         <!-- Preview section -->
         <div class="movie-details-preview">
             <h2>Preview</h2>
+            <p>Category Name: <?= getCategoryName($selectedCategoryId, $conn) ?></p>
             <p><strong>Title:</strong> <span id="previewTitle"><?= $title ?></span></p>
             <p><strong>Release Date:</strong> <span id="previewReleaseDate"><?= $releaseDate ?></span></p>
             <p><strong>Age Rating:</strong> <span id="previewAgeRating"><?= $ageRating ?></span></p>
@@ -305,6 +412,7 @@ if ($userIsAdmin) {
             <p><strong>Director:</strong> <span id="previewDirector"><?= $director ?></span></p>
             <p><strong>Actors:</strong> <span id="previewActors"><?= $actors ?></span></p>
             <p><strong>Genres:</strong> <span id="previewGenres"><?= implode(', ', $genres) ?></span></p>
+            
 
             <?php if (!empty($posterData)) : ?>
             <p><strong>Movie Poster:</strong></p>
