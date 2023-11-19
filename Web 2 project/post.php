@@ -7,10 +7,10 @@ Description: Movie Listing Page
 
 require('authenticate.php');
 
-$servername = "localhost"; // Replace with your database server
-$username = "serveruser"; // Replace with your database username
-$password = "gorgonzola7!"; // Replace with your database password
-$dbname = "serverside"; // Replace with your database name
+$servername = "localhost";
+$username = "serveruser";
+$password = "gorgonzola7!";
+$dbname = "serverside";
 
 // Create a database connection
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -31,9 +31,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $director = $_POST['director'];
     $actors = $_POST['actors'];
 
+    echo "Selected Category: " . $_POST['category'] . "<br>";
+
     // Retrieve and sanitize the genres input
     $genresInput = $_POST['genres'];
     $genresArray = array_map('trim', explode(',', $genresInput));
+
+    // Debugging: Output genres for inspection
+    echo "Genres Input: " . $genresInput . "<br>";
+    echo "Genres Array: ";
+    print_r($genresArray);
+    echo "<br>";
 
     // Initialize moviePoster as null (no file uploaded)
     $moviePoster = null;
@@ -42,110 +50,116 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($_FILES['movie_poster']['error'] === UPLOAD_ERR_OK) {
         // Read the file content
         $moviePoster = file_get_contents($_FILES['movie_poster']['tmp_name']);
-        
+
         // Add image resizing code
         if (extension_loaded('gd')) {
-            list($origWidth, $origHeight) = getimagesize($_FILES['movie_poster']['tmp_name']);
-            $maxWidth = 500; // Define the maximum width for the poster
-            $maxHeight = 750; // Define the maximum height for the poster
-            
-            if ($origWidth > $maxWidth || $origHeight > $maxHeight) {
-                $ratio = $origWidth / $origHeight;
-                
-                if ($maxWidth / $maxHeight > $ratio) {
-                    $maxWidth = $maxHeight * $ratio;
-                } else {
-                    $maxHeight = $maxWidth / $ratio;
-                }
-
-                $resizedPoster = imagecreatetruecolor($maxWidth, $maxHeight);
-                $sourceImage = imagecreatefromstring($moviePoster);
-                
-                imagecopyresampled($resizedPoster, $sourceImage, 0, 0, 0, 0, $maxWidth, $maxHeight, $origWidth, $origHeight);
-
-                ob_start(); // Turn on output buffering
-                imagejpeg($resizedPoster, null, 90);
-                $moviePoster = ob_get_clean(); // Get the resized image content
-                imagedestroy($sourceImage);
-                imagedestroy($resizedPoster);
-            }
+            // Image resizing code...
         }
         // End of image resizing code
     }
 
-    // Insert the movie into the database
-    $sql = "INSERT INTO movie (Title, Release_Date, Age_Rating, Description, Language, Runtime, Movie_Poster, Director, Actors) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sssssssss", $title, $releaseDate, $ageRating, $description, $language, $runtime, $moviePoster, $director, $actors);
+    // Assuming you have a column named 'category_id' in your movie table to store the category ID.
+    $sql = "INSERT INTO movie (category_id, Title, Release_Date, Age_Rating, Description, Language, Runtime, Movie_Poster, Director, Actors) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-    // ... Your existing code ...
+    try {
+        // Prepare the movie insertion statement
+        $stmt = $conn->prepare($sql);
 
-if ($stmt->execute()) {
-    // Movie added successfully
-    $movieId = $stmt->insert_id; // Get the ID of the inserted movie
-
-    // Initialize an array to store genre IDs
-    $genreIds = [];
-
-    foreach ($genresArray as $genre) {
-        // Sanitize and validate the genre as needed
-        $genre = trim($genre);
-
-        // Check if the genre already exists in the "genre" table
-        $genreCheckSql = "SELECT genre_id FROM genre WHERE name = ?";
-        $genreCheckStmt = $conn->prepare($genreCheckSql);
-        $genreCheckStmt->bind_param("s", $genre);
-        $genreCheckStmt->execute();
-        $genreCheckStmt->store_result();
-
-        if ($genreCheckStmt->num_rows > 0) {
-            $genreCheckStmt->bind_result($genreId);
-            $genreCheckStmt->fetch();
-            // The genre already exists, use its ID
-            $genreIds[] = $genreId;
-        } else {
-            $genreInsertSql = "INSERT INTO genre (name) VALUES (?)";
-            $genreInsertStmt = $conn->prepare($genreInsertSql);
-            $genreInsertStmt->bind_param("s", $genre);
-            $genreInsertStmt->execute();
-
-            $genreId = $conn->insert_id;
-            $genreIds[] = $genreId;
+        if (!$stmt) {
+            throw new Exception($conn->error);
         }
 
-        // Close the statement for checking and inserting genres
-        $genreCheckStmt->close();
+        // Bind parameters for movie insertion
+        $stmt->bind_param("isssssssss", $_POST['category'], $title, $releaseDate, $ageRating, $description, $language, $runtime, $moviePoster, $director, $actors);
+
+        // Execute the movie insertion statement
+        if ($stmt->execute()) {
+            // Movie added successfully
+            $movieId = $stmt->insert_id; // Get the ID of the inserted movie
+            $stmt->close(); // Close the movie insertion statement
+
+            // Insert the category into the movie_category table
+            $categorySql = "INSERT INTO movie_category (movie_id, category_id) VALUES (?, ?)";
+            $categoryStmt = $conn->prepare($categorySql);
+
+            if (!$categoryStmt) {
+                throw new Exception($conn->error);
+            }
+
+            // Bind parameters for category insertion
+            $categoryStmt->bind_param("ii", $movieId, $_POST['category']);
+
+            // Execute the category insertion statement
+            if ($categoryStmt->execute()) {
+                // Category added successfully
+                $categoryStmt->close(); // Close the category insertion statement
+
+                // Process and insert genres into the movie_genre table
+                $genreIds = []; // Initialize an array to store genre IDs
+
+                foreach ($genresArray as $genre) {
+                    // Sanitize and validate the genre as needed
+                    $genre = trim($genre);
+
+                    // Check if the genre already exists in the "genre" table
+                    $genreCheckSql = "SELECT genre_id FROM genre WHERE name = ?";
+                    $genreCheckStmt = $conn->prepare($genreCheckSql);
+                    $genreCheckStmt->bind_param("s", $genre);
+                    $genreCheckStmt->execute();
+                    $genreCheckStmt->store_result();
+
+                    if ($genreCheckStmt->num_rows > 0) {
+                        $genreCheckStmt->bind_result($genreId);
+                        $genreCheckStmt->fetch();
+                        // The genre already exists, use its ID
+                        $genreIds[] = $genreId;
+                    } else {
+                        // Insert the genre into the "genre" table
+                        $genreInsertSql = "INSERT INTO genre (name) VALUES (?)";
+                        $genreInsertStmt = $conn->prepare($genreInsertSql);
+                        $genreInsertStmt->bind_param("s", $genre);
+                        $genreInsertStmt->execute();
+
+                        $genreId = $conn->insert_id;
+                        $genreIds[] = $genreId;
+                    }
+
+                    // Close the statement for checking and inserting genres
+                    $genreCheckStmt->close();
+                }
+
+                // Insert genres and associate them with the movie in the "movie_genre" junction table
+                foreach ($genreIds as $genreId) {
+                    $movieGenreSql = "INSERT INTO movie_genre (movie_id, genre_id) VALUES (?, ?)";
+                    $movieGenreStmt = $conn->prepare($movieGenreSql);
+                    $movieGenreStmt->bind_param("ii", $movieId, $genreId);
+                    $movieGenreStmt->execute();
+                    $movieGenreStmt->close();
+                }
+
+                // Insert the user-movie relationship into the "user_movie" table
+                if (isLoggedIn()) {
+                    $userId = $_SESSION['user_id'];
+                    echo "User ID: " . $userId . "<br>"; // Add this line for debugging
+
+                    $userMovieSql = "INSERT INTO user_movie (userid, movieid) VALUES (?, ?)";
+                    $userMovieStmt = $conn->prepare($userMovieSql);
+                    $userMovieStmt->bind_param("ii", $userId, $movieId);
+                    $userMovieStmt->execute();
+                    $userMovieStmt->close();
+                }
+
+                // Continue with the rest of your code...
+
+            } else {
+                throw new Exception($categoryStmt->error);
+            }
+        } else {
+            throw new Exception($stmt->error);
+        }
+    } catch (Exception $e) {
+        echo "Error: " . $e->getMessage() . "<br>";
     }
-
-    // Insert genres and associate them with the movie in the "movie_genre" junction table
-    foreach ($genreIds as $genreId) {
-        $movieGenreSql = "INSERT INTO movie_genre (movie_id, genre_id) VALUES (?, ?)";
-        $movieGenreStmt = $conn->prepare($movieGenreSql);
-        $movieGenreStmt->bind_param("ii", $movieId, $genreId);
-        $movieGenreStmt->execute();
-        $movieGenreStmt->close();
-    }
-
-    // Insert the user-movie relationship into the "user_movie" table
-    if (isLoggedIn()) {
-        $userId = $_SESSION['user_id'];
-
-        $userMovieSql = "INSERT INTO user_movie (userid, movieid) VALUES (?, ?)";
-        $userMovieStmt = $conn->prepare($userMovieSql);
-        $userMovieStmt->bind_param("ii", $userId, $movieId);
-        $userMovieStmt->execute();
-        $userMovieStmt->close();
-    }
-
-    header("Location: index.php");
-    exit();
-} else {
-    echo "Database error: " . $stmt->error;
-}
-
-// Close the statement for inserting movies
-$stmt->close();
-
 }
 ?>
 
@@ -163,7 +177,23 @@ $stmt->close();
 <body>
     <div class="add-movie">
         <h2>Add Movie</h2>
+        <ul>
+            <li><a href="index.php">Home</a></li>
+        </ul>
         <form action="post.php" method="post" enctype="multipart/form-data">
+
+            <label for="category">Category:</label>
+            <select name="category" id="category">
+                <option value="">Select a category</option>
+                <?php
+                // Fetch categories from the database and generate options
+                $categorySql = "SELECT * FROM categories";
+                $categoryResult = $conn->query($categorySql);
+                while ($category = $categoryResult->fetch_assoc()) {
+                    echo "<option value='{$category['category_id']}'>{$category['category_name']}</option>";
+                }
+                ?>
+            </select>
             <label for="title">Title:</label>
             <input type="text" id="title" name="title" required>
 
@@ -198,4 +228,5 @@ $stmt->close();
         </form>
     </div>
 </body>
+
 </html>

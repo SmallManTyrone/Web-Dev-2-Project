@@ -14,6 +14,39 @@ try {
     die("Connection failed: " . $e->getMessage());
 }
 
+
+$checkConstraintSql = "SELECT COUNT(*) as count
+                       FROM information_schema.TABLE_CONSTRAINTS
+                       WHERE CONSTRAINT_SCHEMA = :dbname
+                       AND CONSTRAINT_NAME = 'movie_category_ibfk_1'
+                       AND TABLE_NAME = 'movie_category'
+                       AND CONSTRAINT_TYPE = 'FOREIGN KEY'";
+
+$checkConstraintStmt = $conn->prepare($checkConstraintSql);
+$checkConstraintStmt->bindParam(':dbname', $dbname, PDO::PARAM_STR);
+$checkConstraintStmt->execute();
+$count = $checkConstraintStmt->fetchColumn();
+
+if ($count == 0) {
+    $alterTableSql = "ALTER TABLE `movie_category`
+                      ADD CONSTRAINT `movie_category_ibfk_1`
+                      FOREIGN KEY (`movie_id`)
+                      REFERENCES `movie` (`MovieID`)
+                      ON DELETE CASCADE";
+
+    $alterTableStmt = $conn->prepare($alterTableSql);
+
+    try {
+        $alterTableStmt->execute();
+        echo "Foreign key constraint updated successfully.";
+    } catch (PDOException $e) {
+        echo "Error updating foreign key constraint: " . $e->getMessage();
+        // Handle the error as needed
+    }
+} else {
+    echo "Foreign key constraint already exists.";
+}
+
 // Function to get the category name based on category ID
 function getCategoryName($categoryId, $conn)
 {
@@ -73,6 +106,8 @@ if (isset($_GET['id']) && isInteger($_GET['id'])) {
         header("Location: index.php");
         exit();
     }
+
+  
 }
 
 // Debug: Print out admin-related session variables
@@ -87,12 +122,17 @@ if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true) {
 }
 
 // Check if the currently logged-in user is the owner of the movie post
-$userIsOwner = false;
 $loggedInUserId = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
+$userIsOwner = false;
 
 if ($loggedInUserId && $movieUserID && $loggedInUserId == $movieUserID) {
     $userIsOwner = true;
 }
+echo "Debug - Logged-in User ID: $loggedInUserId<br>";
+echo "Debug - Movie Owner UserID: $movieUserID<br>";
+
+echo "Debug - Session Data: " . print_r($_SESSION, true) . "<br>";
+
 
 // Retrieve the list of genres associated with the movie
 $genreSql = "SELECT genre.name FROM genre
@@ -103,17 +143,40 @@ $genreStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
 $genreStmt->execute();
 $genres = $genreStmt->fetchAll(PDO::FETCH_COLUMN);
 
-// Fetch the actual category name from the database
-$categoryNameSql = "SELECT category_name FROM categories WHERE category_id = :categoryId";
-$categoryNameStmt = $conn->prepare($categoryNameSql);
-$categoryNameStmt->bindParam(':categoryId', $categoryId, PDO::PARAM_INT);
-$categoryNameStmt->execute();
-$categoryName = $categoryNameStmt->fetchColumn();
 
-echo "Debug - Retrieved Category ID: $categoryId";
+// Fetch the actual category name from the movie_category junction table
+$categoryNameSql = "SELECT c.category_name 
+                   FROM movie_category mc
+                   JOIN categories c ON mc.category_id = c.category_id
+                   WHERE mc.movie_id = :movieId";
+$categoryNameStmt = $conn->prepare($categoryNameSql);
+$categoryNameStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
+
+if ($categoryNameStmt->execute()) {
+    $categoryName = $categoryNameStmt->fetchColumn();
+    echo "Debug - Retrieved Category Name: $categoryName";
+} else {
+    echo "Debug - Error executing SQL query: " . print_r($categoryNameStmt->errorInfo(), true);
+}
 
 // If you want to fetch category name instead of ID, you can use the getCategoryName function
-$category = getCategoryName($categoryId, $conn);
+$category = $categoryName;
+
+// Before the update operation
+// Fetch the current category ID before the update
+$currentCategorySql = "SELECT category_id FROM movie_category WHERE movie_id = :movieId";
+$currentCategoryStmt = $conn->prepare($currentCategorySql);
+$currentCategoryStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
+$currentCategoryStmt->execute();
+$currentCategoryId = $currentCategoryStmt->fetchColumn();
+
+echo "Debug - Current Category ID in movie_category: $currentCategoryId<br>";
+
+
+// After retrieving $currentCategoryId, set the default value
+$selectedCategoryId = isset($currentCategoryId) ? $currentCategoryId : null;
+
+
 
 // Handle form submission for updating or deleting the movie
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -128,9 +191,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $actors = filter_input(INPUT_POST, 'actors', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     $selectedCategoryId = filter_input(INPUT_POST, 'category', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
-    echo "Debug - Selected Category ID: $selectedCategoryId";
-    $category = getCategoryName($categoryId, $conn);
+    echo "Debug - Selected Category ID: " . (is_array($selectedCategoryId) ? 'No category selected' : $selectedCategoryId);
 
+
+    // Identify categories to be added and removed
+    $categoriesToAdd = array_diff([$selectedCategoryId], [$currentCategoryId]);
+    $categoriesToRemove = array_diff([$currentCategoryId], [$selectedCategoryId]);
+
+    // Add new category
+    foreach ($categoriesToAdd as $categoryId) {
+        if ($categoryId !== null) {
+            $addCategorySql = "INSERT INTO movie_category (movie_id, category_id) VALUES (:movieId, :categoryId)";
+            $addCategoryStmt = $conn->prepare($addCategorySql);
+            $addCategoryStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
+            $addCategoryStmt->bindParam(':categoryId', $categoryId, PDO::PARAM_INT);
+            $addCategoryStmt->execute();
+        }
+    }
+
+    // Remove old category
+    foreach ($categoriesToRemove as $categoryId) {
+        if ($categoryId !== null) {
+            $removeCategorySql = "DELETE FROM movie_category WHERE movie_id = :movieId AND category_id = :categoryId";
+            $removeCategoryStmt = $conn->prepare($removeCategorySql);
+            $removeCategoryStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
+            $removeCategoryStmt->bindParam(':categoryId', $categoryId, PDO::PARAM_INT);
+            $removeCategoryStmt->execute();
+        }
+    }
     $genresInput = $_POST['genres'];
     $submittedGenres = array_map('trim', explode(',', $genresInput));
 
@@ -176,12 +264,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $posterData = null; // or $posterData = ''; to ensure it's empty
     }
 
-    if (isset($_POST['delete']) && $userIsOwner ) {
-        // Delete the movie from the database
+    if (isset($_POST['confirmDelete']) && $userIsAdmin) {
+        // Handle admin's confirmation to delete the movie
         $deleteSql = "DELETE FROM movie WHERE MovieID = :movieId";
         $deleteStmt = $conn->prepare($deleteSql);
         $deleteStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
-
+    
+        if ($deleteStmt->execute()) {
+            echo "Movie deleted successfully.";
+            // Movie deleted successfully, redirect to the index page
+            header("Location: index.php");
+            exit();
+        } else {
+            echo "Error deleting the movie: " . $deleteStmt->errorInfo()[2];
+        }
+    }
+    
+    if (isset($_POST['delete']) && ($userIsOwner || $userIsAdmin)) {
+        // Handle owner or admin's request to delete the movie
+        $deleteSql = "DELETE FROM movie WHERE MovieID = :movieId";
+        $deleteStmt = $conn->prepare($deleteSql);
+        $deleteStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
+    
         if ($deleteStmt->execute()) {
             echo "Movie deleted successfully.";
             // Movie deleted successfully, redirect to the index page
@@ -191,14 +295,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo "Error deleting the movie: " . $deleteStmt->errorInfo()[2];
         }
     } elseif ($userIsOwner || $userIsAdmin) {
-        // Handle file upload
+        // Handle file upload and update the movie
         if ($_FILES['movie_poster']['error'] === UPLOAD_ERR_OK) {
             // Get the uploaded file's temporary name and read its contents
             $posterTmpName = $_FILES['movie_poster']['tmp_name'];
             $posterData = file_get_contents($posterTmpName);
         }
-
-        // Update the movie in the database, including genres
         $updateSql = "UPDATE movie SET 
         Title = :title, 
         Release_Date = :releaseDate, 
@@ -252,6 +354,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $updateGenreStmt->bindParam(':genreId', $genreId, PDO::PARAM_INT);
                     $updateGenreStmt->execute();
                 }
+
+// Delete existing category associations for the movie
+$deleteCategorySql = "DELETE FROM movie_category WHERE movie_id = :movieId";
+$deleteCategoryStmt = $conn->prepare($deleteCategorySql);
+$deleteCategoryStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
+$deleteCategoryStmt->execute();
+
+// Insert the new category association
+$insertCategorySql = "INSERT INTO movie_category (movie_id, category_id) VALUES (:movieId, :categoryId)";
+$insertCategoryStmt = $conn->prepare($insertCategorySql);
+$insertCategoryStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
+$insertCategoryStmt->bindParam(':categoryId', $selectedCategoryId, PDO::PARAM_INT);
+$insertCategoryStmt->execute();
+
+
+
+$deleteCategory = isset($_POST['deleteCategory']) && $_POST['deleteCategory'] === "1";
+if ($deleteCategory) {
+    // Delete category association only if $selectedCategoryId is not null
+    if ($selectedCategoryId !== null) {
+        $deleteCategorySql = "DELETE FROM movie_category WHERE movie_id = :movieId";
+        $deleteCategoryStmt = $conn->prepare($deleteCategorySql);
+        $deleteCategoryStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
+        $deleteCategoryStmt->execute();
+        $selectedCategoryId = null; // Set selected category ID to null after deletion
+    } else {
+        echo "Error: Category ID is null.";
+    }
+}
+
+// Update the category association in the movie_category table
+$updateCategorySql = "UPDATE movie_category SET category_id = :categoryId WHERE movie_id = :movieId";
+$updateCategoryStmt = $conn->prepare($updateCategorySql);
+$updateCategoryStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
+
+// Bind $selectedCategoryId to the parameter, or bind null if it's null
+$updateCategoryStmt->bindValue(':categoryId', $selectedCategoryId, $selectedCategoryId !== null ? PDO::PARAM_INT : PDO::PARAM_NULL);
+
+
+
             }
 
             // Redirect to the index page or the movie details page
@@ -287,20 +429,12 @@ if ($userIsAdmin) {
     echo "User is not an admin and not the owner.";
 }
 
-var_dump($categoryId); // Check the value of $categoryId
-echo getCategoryName($categoryId, $conn); // Check the result of getCategoryName
-
-// After processing the form submission
-$selectedCategoryId = isset($_POST['category']) ? $_POST['category'] : null;
-
-// Update $categoryId with the selected category ID
-$categoryId = $selectedCategoryId;
-
-// Retrieve the category name based on the selected category ID
-$selectedCategoryName = getCategoryName($selectedCategoryId, $conn); 
 
 
- "Debug - Category Name: " . getCategoryName($selectedCategoryId, $conn); 
+
+
+
+
 ?>
 
 
@@ -309,15 +443,17 @@ $selectedCategoryName = getCategoryName($selectedCategoryId, $conn);
 
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE-edge">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="Styles.css">
-    <script src="preview.js"></script>
+
     <title>Movie CMS</title>
 </head>
 
 <body>
-    <li><a href="index.php">Home</a></li>
+    <ul>
+        <li><a href="index.php">Home</a></li>
+    </ul>
     <div class="movie-details-and-edit">
         <!-- Movie details -->
         <div class="movie-details">
@@ -329,14 +465,15 @@ $selectedCategoryName = getCategoryName($selectedCategoryId, $conn);
             <p>Runtime: <?= $runtime ?></p>
             <p>Director: <?= $director ?></p>
             <p>Actors: <?= $actors ?></p>
-            <img src="data:image/jpeg;base64,<?= base64_encode($posterData) ?>" alt="Movie Poster">
+            <img id="previewMoviePoster" src="data:image/jpeg;base64,<?= base64_encode($posterData) ?>"
+                alt="Movie Poster">
         </div>
         <!-- Edit form -->
         <div class="movie-edit-form">
             <h2>Edit Movie</h2>
             <form action="edit.php?id=<?= $movieId; ?>" method="post" enctype="multipart/form-data">
                 <p>Category:
-                    
+
                     <?php
                     
         $allCategoriesSql = "SELECT * FROM categories";
@@ -344,23 +481,25 @@ $selectedCategoryName = getCategoryName($selectedCategoryId, $conn);
         $allCategoriesStmt->execute();
         $allCategories = $allCategoriesStmt->fetchAll(PDO::FETCH_ASSOC);
         ?>
-                    <select name="category">
+                    <label for="category">Category:</label>
+                    <select name="category" id="category">
                         <option value="">Select a category</option>
                         <?php
-                        
-           foreach ($allCategories as $category) {
-            $categoryId = $category['category_id'];
-            $categoryName = $category['category_name'];
-            $isSelected = ($categoryId == $selectedCategoryId) ? 'selected' : '';
-            echo "<option value=\"$categoryId\" $isSelected>$categoryName</option>";
-        }
-
-       
-        
-            ?>
+    foreach ($allCategories as $category) {
+        $categoryId = $category['category_id'];
+        $categoryName = $category['category_name'];
+        $isSelected = ($categoryId == $selectedCategoryId) ? 'selected' : '';
+        echo "<option value=\"$categoryId\" $isSelected>$categoryName</option>";
+    }
+    ?>
                     </select>
+
+                    <!-- New checkbox for deleting the category -->
+                    <label for="deleteCategory">Delete Category:</label>
+                    <input type="checkbox" id="deleteCategory" name="deleteCategory" value="1">
+
                 </p>
-                
+
                 <label for="title">Title:</label>
                 <input type="text" id="title" name="title" value="<?= $title; ?>" required>
                 <label for="releaseDate">Release Date:</label>
@@ -377,7 +516,7 @@ $selectedCategoryName = getCategoryName($selectedCategoryId, $conn);
                 <input type="text" id="director" name="director" value="<?= $director; ?>" required>
                 <label for="actors">Actors:</label>
                 <input type="text" id="actors" name="actors" value="<?= $actors; ?>" required>
-                <!-- Add more input fields as needed -->
+                <label for="genres">Genres:</label>
                 <input type="text" id="genres" name="genres" value="<?= implode(', ', $genres); ?>"
                     placeholder="Enter genres (e.g., Action, Comedy, Drama)">
                 <?php if (!empty($posterData)) { ?>
@@ -386,38 +525,19 @@ $selectedCategoryName = getCategoryName($selectedCategoryId, $conn);
                 <?php } ?>
                 <label for="movie_poster">Movie Poster:</label>
                 <input type="file" id="movie_poster" name="movie_poster">
-                <?php if ($userIsAdmin || $userIsOwner) : ?>
-                <button type="submit">Update</button>
-                <?php if ($userIsOwner) : ?>
+                <?php if ($userIsAdmin === true) : ?>
+                <button type="submit" name="update">Update</button>
+                <button type="submit" name="confirmDelete">Confirm Delete</button>
+                <?php elseif ($userIsOwner === true) : ?>
+                <button type="submit" name="update">Update</button>
                 <button type="submit" name="delete">Delete Movie</button>
-                <?php endif; ?>
                 <?php else : ?>
                 <p>You are not authorized to delete or update this movie.</p>
                 <?php endif; ?>
 
+
             </form>
-    
-        </div>
 
-        <!-- Preview section -->
-        <div class="movie-details-preview">
-            <h2>Preview</h2>
-            <p>Category Name: <?= getCategoryName($selectedCategoryId, $conn) ?></p>
-            <p><strong>Title:</strong> <span id="previewTitle"><?= $title ?></span></p>
-            <p><strong>Release Date:</strong> <span id="previewReleaseDate"><?= $releaseDate ?></span></p>
-            <p><strong>Age Rating:</strong> <span id="previewAgeRating"><?= $ageRating ?></span></p>
-            <p><strong>Description:</strong> <span id="previewDescription"><?= $description ?></span></p>
-            <p><strong>Language:</strong> <span id="previewLanguage"><?= $language ?></span></p>
-            <p><strong>Runtime:</strong> <span id="previewRuntime"><?= $runtime ?></span></p>
-            <p><strong>Director:</strong> <span id="previewDirector"><?= $director ?></span></p>
-            <p><strong>Actors:</strong> <span id="previewActors"><?= $actors ?></span></p>
-            <p><strong>Genres:</strong> <span id="previewGenres"><?= implode(', ', $genres) ?></span></p>
-            
-
-            <?php if (!empty($posterData)) : ?>
-            <p><strong>Movie Poster:</strong></p>
-            <img id="previewMoviePoster" ,<?= base64_encode($posterData) ?> alt="Movie Poster">
-            <?php endif ?>
         </div>
     </div>
 </body>

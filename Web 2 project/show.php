@@ -1,6 +1,32 @@
 <?php
 require('authenticate.php');
 
+function displayComments($conn, $movieId)
+{
+    $commentsSql = "SELECT * FROM comments WHERE movie_id = ? ORDER BY created_at DESC";
+    $commentsStmt = $conn->prepare($commentsSql);
+    $commentsStmt->bind_param("i", $movieId);
+    $commentsStmt->execute();
+    $commentsResult = $commentsStmt->get_result();
+
+    echo "<h2>Comments</h2>";
+
+    if ($commentsResult->num_rows > 0) {
+        while ($comment = $commentsResult->fetch_assoc()) {
+            $name = $comment['name'];
+            $commentText = $comment['comment'];
+            $createdAt = $comment['created_at'];
+
+            echo "<div class='comment'>";
+            echo "<p><strong>$name:</strong> $commentText</p>";
+            echo "<small>Posted on $createdAt</small>";
+            echo "</div>";
+        }
+    } else {
+        echo "<p>No comments yet. Be the first to comment!</p>";
+    }
+}
+
 // Check if the 'id' parameter is provided in the URL
 if (isset($_GET['id'])) {
     $movieId = $_GET['id'];
@@ -22,7 +48,6 @@ if (isset($_GET['id'])) {
     if ($result->num_rows > 0) {
         // Fetch and display movie details
         $row = $result->fetch_assoc();
-      
 
         $title = $row['Title'];
         $releaseDate = $row['Release_Date'];
@@ -34,6 +59,7 @@ if (isset($_GET['id'])) {
         $actors = $row['Actors'];
         $poster = $row['Movie_Poster'];
         $categoryId = $row['category_id'];
+        $genres = $row['genres']; // Fetch genres
 
         // Fetch category name
         $categorySql = "SELECT category_id, category_name FROM categories WHERE category_id = ?";
@@ -52,7 +78,8 @@ if (isset($_GET['id'])) {
             echo "No category found for ID: " . $categoryId;
         }
 
-        // Debugging line - print category information
+        // Debugging line - print category and genres information
+        echo "Genres: " . $genres . "<br>";
 
         ?>
 
@@ -80,15 +107,32 @@ if (isset($_GET['id'])) {
                     <p>Director: <?= $director; ?></p>
                     <p>Actors: <?= $actors; ?></p>
                     <p>Category: <?= $category; ?></p>
+                    <p>Genres: <?= $genres; ?></p>
 
                     <img src='data:image/jpeg;base64,<?= base64_encode($poster); ?>' alt='Movie Poster' width='300'>
                 </div>
+
+                <!-- Comment Form -->
+                <div class='comment-form'>
+                    <h2>Add a Comment</h2>
+                    <form action='post_comment.php' method='post'>
+                        <input type='hidden' name='movie_id' value='<?= $movieId; ?>'>
+                        <label for='name'>Name:</label>
+                        <input type='text' id='name' name='name' required>
+                        <label for='comment'>Comment:</label>
+                        <textarea id='comment' name='comment' required></textarea>
+                        <button type='submit'>Submit Comment</button>
+                    </form>
+                </div>
+
+                <!-- Display Comments -->
+                <?php displayComments($conn, $movieId); ?>
             </div>
         </body>
 
         </html>
 
-        <?php
+<?php
     } else {
         echo "Movie not found.";
     }
