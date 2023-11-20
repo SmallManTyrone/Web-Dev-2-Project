@@ -93,10 +93,11 @@ if (isset($_POST['create_genre'])) {
 
 <head>
     <title>Management</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
-    <h2>User and Movie Management</h2>
+    <h2>User Management</h2>
     <a href="index.php" class="nav-link">Home</a>
     <a href="create-user.php" class="nav-link">Create User</a>
   
@@ -112,7 +113,6 @@ if (isset($_POST['create_genre'])) {
         </tr>
         <?php while ($row = $result->fetch_assoc()) { ?>
         <tr>
-            <td><?php echo $row['UserID']; ?></td>
             <td><?php echo $row['Username']; ?></td>
             <td><?php echo $row['email']; ?></td>
             <td>
@@ -124,54 +124,11 @@ if (isset($_POST['create_genre'])) {
         <?php } ?>
     </table>
 
-    <!-- Create Movie Form -->
-    <h3>Create Movie</h3>
-    <form action="user-management.php" method="post" enctype="multipart/form-data">
-        <label for="title">Title:</label>
-        <input type="text" id="title" name="title" required>
-        <label for="release_date">Release Date:</label>
-        <input type="text" id="release_date" name="release_date" required>
-        <label for="age_rating">Age Rating:</label>
-        <input type="text" id="age_rating" name="age_rating" required>
-        <label for="description">Description:</label>
-        <textarea id="description" name="description" required></textarea>
-        <label for="language">Language:</label>
-        <input type="text" id="language" name="language" required>
-        <label for="runtime">Runtime:</label>
-        <input type="text" id="runtime" name="runtime" required>
-        <label for="director">Director:</label>
-        <input type="text" id="director" name="director" required>
-        <label for="actors">Actors:</label>
-        <input type="text" id="actors" name="actors" required>
-        <label for="movie_poster">Movie Poster:</label>
-        <input type="file" id="movie_poster" name="movie_poster" required>
-        <button type="submit" name="create_movie">Create Movie</button>
-    </form>
-    <!-- Create Genre Form -->
-    <h3>Create Genre</h3>
-    <form action="user-management.php" method="post">
-        <label for="genre_name">Genre Name:</label>
-        <input type="text" id="genre_name" name="genre_name" required>
-        <button type="submit" name="create_genre">Create Genre</button>
-    </form>
+    <p>
+        <a href="post.php">Go to Post</a> |
+        <a href="CRUDcategory.php">Go to CRUDcategory</a>
+    </p>
 
-    <!-- Display Genres -->
-    <h3>Genres</h3>
-    <table>
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-        </tr>
-        <?php
-        $genreResult = $conn->query("SELECT * FROM genre");
-        while ($genreRow = $genreResult->fetch_assoc()) {
-        ?>
-        <tr>
-            <td><?php echo $genreRow['genre_id']; ?></td>
-            <td><?php echo $genreRow['name']; ?></td>
-        </tr>
-        <?php } ?>
-    </table>
 </body>
 
 </html>

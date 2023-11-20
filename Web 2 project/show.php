@@ -3,6 +3,7 @@ require('authenticate.php');
 
 function displayComments($conn, $movieId)
 {
+    // In displayComments function
     $commentsSql = "SELECT * FROM comments WHERE movie_id = ? ORDER BY created_at DESC";
     $commentsStmt = $conn->prepare($commentsSql);
     $commentsStmt->bind_param("i", $movieId);
@@ -13,19 +14,44 @@ function displayComments($conn, $movieId)
 
     if ($commentsResult->num_rows > 0) {
         while ($comment = $commentsResult->fetch_assoc()) {
+            $commentId = $comment['id']; // Assuming the comment ID is stored in the 'id' column
             $name = $comment['name'];
             $commentText = $comment['comment'];
             $createdAt = $comment['created_at'];
+            $moderationStatus = $comment['moderation_status']; // Add this line
 
-            echo "<div class='comment'>";
-            echo "<p><strong>$name:</strong> $commentText</p>";
-            echo "<small>Posted on $createdAt</small>";
-            echo "</div>";
+            // Check if the comment should be displayed
+            if ($moderationStatus === 'approved' || isAdminLoggedIn()) {
+                echo "<div class='comment'>";
+                echo "<p><strong>$name:</strong> $commentText</p>";
+                echo "<small>Posted on $createdAt</small>";
+
+                // Check if the logged-in user is an admin before showing the "Moderate" button
+                if (isAdminLoggedIn()) {
+                    // Add a "Moderate" button with a link to the admin_moderate_comment.php page
+                    echo "<form action='admin_moderate_comment.php' method='get'>";
+                    echo "<input type='hidden' name='comment_id' value='$commentId'>";
+                    echo "<button type='submit'>Moderate</button>";
+                    echo "</form>";
+
+                    // Add an "Unhide" button if the comment is hidden
+                    if ($moderationStatus == 'hidden') {
+                        echo "<form action='admin_moderate_comment.php' method='post'>";
+                        echo "<input type='hidden' name='comment_id' value='$commentId'>";
+                        echo "<input type='hidden' name='movie_id' value='$movieId'>";
+                        echo "<button type='submit' name='action' value='unhide'>Unhide</button>";
+                        echo "</form>";
+                    }
+                }
+
+                echo "</div>";
+            }
         }
     } else {
         echo "<p>No comments yet. Be the first to comment!</p>";
     }
 }
+
 
 // Check if the 'id' parameter is provided in the URL
 if (isset($_GET['id'])) {
@@ -83,54 +109,55 @@ if (isset($_GET['id'])) {
 
         ?>
 
-        <!DOCTYPE html>
-        <html lang='en'>
+<!DOCTYPE html>
+<html lang='en'>
 
-        <head>
-            <meta charset='UTF-8'>
-            <meta http-equiv='X-UA-Compatible' content='IE=edge'>
-            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-            <link rel='stylesheet' href='styles.css'>
-            <title>Movie Details</title>
-        </head>
+<head>
+    <meta charset='UTF-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <link rel='stylesheet' href='styles.css'>
+    <title>Movie Details</title>
+</head>
 
-        <body>
-            <div class='movie-cms-box'>
-                <h1>Movie Details</h1>
-                <div class='movie'>
-                    <h2><?php echo $title; ?></h2>
-                    <p>Release Date: <?= $releaseDate; ?></p>
-                    <p>Age Rating: <?= $ageRating; ?></p>
-                    <p>Description: <?= $description; ?></p>
-                    <p>Language: <?= $language; ?></p>
-                    <p>Runtime: <?= $runtime; ?> Minutes</p>
-                    <p>Director: <?= $director; ?></p>
-                    <p>Actors: <?= $actors; ?></p>
-                    <p>Category: <?= $category; ?></p>
-                    <p>Genres: <?= $genres; ?></p>
+<body>
+    <div class='movie-cms-box'>
+        <h1>Movie Details</h1>
+        <li><a href="index.php">Home</a></li>
+        <div class='movie'>
+            <h2><?php echo $title; ?></h2>
+            <p>Release Date: <?= $releaseDate; ?></p>
+            <p>Age Rating: <?= $ageRating; ?></p>
+            <p>Description: <?= $description; ?></p>
+            <p>Language: <?= $language; ?></p>
+            <p>Runtime: <?= $runtime; ?> Minutes</p>
+            <p>Director: <?= $director; ?></p>
+            <p>Actors: <?= $actors; ?></p>
+            <p>Category: <?= $category; ?></p>
+            <p>Genres: <?= $genres; ?></p>
 
-                    <img src='data:image/jpeg;base64,<?= base64_encode($poster); ?>' alt='Movie Poster' width='300'>
-                </div>
+            <img src='data:image/jpeg;base64,<?= base64_encode($poster); ?>' alt='Movie Poster' width='300'>
+        </div>
 
-                <!-- Comment Form -->
-                <div class='comment-form'>
-                    <h2>Add a Comment</h2>
-                    <form action='post_comment.php' method='post'>
-                        <input type='hidden' name='movie_id' value='<?= $movieId; ?>'>
-                        <label for='name'>Name:</label>
-                        <input type='text' id='name' name='name' required>
-                        <label for='comment'>Comment:</label>
-                        <textarea id='comment' name='comment' required></textarea>
-                        <button type='submit'>Submit Comment</button>
-                    </form>
-                </div>
+        <!-- Comment Form -->
+        <div class='comment-form'>
+            <h2>Add a Comment</h2>
+            <form action='post_comment.php' method='post'>
+                <input type='hidden' name='movie_id' value='<?= $movieId; ?>'>
+                <label for='name'>Name:</label>
+                <input type='text' id='name' name='name' required>
+                <label for='comment'>Comment:</label>
+                <textarea id='comment' name='comment' required></textarea>
+                <button type='submit'>Submit Comment</button>
+            </form>
+        </div>
 
-                <!-- Display Comments -->
-                <?php displayComments($conn, $movieId); ?>
-            </div>
-        </body>
+      
+        <?php displayComments($conn, $movieId); ?>
+    </div>
+</body>
 
-        </html>
+</html>
 
 <?php
     } else {

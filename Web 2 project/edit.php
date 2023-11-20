@@ -15,6 +15,7 @@ try {
 }
 
 
+
 $checkConstraintSql = "SELECT COUNT(*) as count
                        FROM information_schema.TABLE_CONSTRAINTS
                        WHERE CONSTRAINT_SCHEMA = :dbname
@@ -178,6 +179,7 @@ $selectedCategoryId = isset($currentCategoryId) ? $currentCategoryId : null;
 
 
 
+
 // Handle form submission for updating or deleting the movie
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate and sanitize the input as needed
@@ -194,31 +196,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     echo "Debug - Selected Category ID: " . (is_array($selectedCategoryId) ? 'No category selected' : $selectedCategoryId);
 
 
+
     // Identify categories to be added and removed
     $categoriesToAdd = array_diff([$selectedCategoryId], [$currentCategoryId]);
     $categoriesToRemove = array_diff([$currentCategoryId], [$selectedCategoryId]);
 
-    // Add new category
-    foreach ($categoriesToAdd as $categoryId) {
-        if ($categoryId !== null) {
-            $addCategorySql = "INSERT INTO movie_category (movie_id, category_id) VALUES (:movieId, :categoryId)";
-            $addCategoryStmt = $conn->prepare($addCategorySql);
-            $addCategoryStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
-            $addCategoryStmt->bindParam(':categoryId', $categoryId, PDO::PARAM_INT);
-            $addCategoryStmt->execute();
-        }
-    }
+// Add new category
+foreach ($categoriesToAdd as $categoryId) {
+    $addCategorySql = "INSERT INTO movie_category (movie_id, category_id) VALUES (:movieId, :categoryId)";
+    $addCategoryStmt = $conn->prepare($addCategorySql);
+    $addCategoryStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
+    $addCategoryStmt->bindParam(':categoryId', $categoryId, PDO::PARAM_INT);
+    $addCategoryStmt->execute();
+}
 
-    // Remove old category
-    foreach ($categoriesToRemove as $categoryId) {
-        if ($categoryId !== null) {
-            $removeCategorySql = "DELETE FROM movie_category WHERE movie_id = :movieId AND category_id = :categoryId";
-            $removeCategoryStmt = $conn->prepare($removeCategorySql);
-            $removeCategoryStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
-            $removeCategoryStmt->bindParam(':categoryId', $categoryId, PDO::PARAM_INT);
-            $removeCategoryStmt->execute();
-        }
-    }
+// Remove old category
+foreach ($categoriesToRemove as $categoryId) {
+    $removeCategorySql = "DELETE FROM movie_category WHERE movie_id = :movieId AND category_id = :categoryId";
+    $removeCategoryStmt = $conn->prepare($removeCategorySql);
+    $removeCategoryStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
+    $removeCategoryStmt->bindParam(':categoryId', $categoryId, PDO::PARAM_INT);
+    $removeCategoryStmt->execute();
+}
+
     $genresInput = $_POST['genres'];
     $submittedGenres = array_map('trim', explode(',', $genresInput));
 
@@ -355,18 +355,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $updateGenreStmt->execute();
                 }
 
+
+
 // Delete existing category associations for the movie
 $deleteCategorySql = "DELETE FROM movie_category WHERE movie_id = :movieId";
 $deleteCategoryStmt = $conn->prepare($deleteCategorySql);
 $deleteCategoryStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
 $deleteCategoryStmt->execute();
 
-// Insert the new category association
-$insertCategorySql = "INSERT INTO movie_category (movie_id, category_id) VALUES (:movieId, :categoryId)";
-$insertCategoryStmt = $conn->prepare($insertCategorySql);
-$insertCategoryStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
-$insertCategoryStmt->bindParam(':categoryId', $selectedCategoryId, PDO::PARAM_INT);
-$insertCategoryStmt->execute();
+try {
+    // Insert the new category association
+    $insertCategorySql = "INSERT INTO movie_category (movie_id, category_id) VALUES (:movieId, :categoryId)";
+    $insertCategoryStmt = $conn->prepare($insertCategorySql);
+    $insertCategoryStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
+    $insertCategoryStmt->bindParam(':categoryId', $selectedCategoryId, PDO::PARAM_INT);
+    $insertCategoryStmt->execute();
+} catch (PDOException $e) {
+    echo "PDOException: " . $e->getMessage();
+    // Handle the error as needed
+}
 
 
 

@@ -20,6 +20,8 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+$successMessage = '';
+
 // Handle new movie submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = $_POST['title'];
@@ -46,17 +48,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Initialize moviePoster as null (no file uploaded)
     $moviePoster = null;
 
-    // Check for file upload errors
-    if ($_FILES['movie_poster']['error'] === UPLOAD_ERR_OK) {
-        // Read the file content
-        $moviePoster = file_get_contents($_FILES['movie_poster']['tmp_name']);
+  // Check for file upload errors
+if ($_FILES['movie_poster']['error'] === UPLOAD_ERR_OK) {
+    // Read the file content
+    $moviePoster = file_get_contents($_FILES['movie_poster']['tmp_name']);
 
-        // Add image resizing code
-        if (extension_loaded('gd')) {
-            // Image resizing code...
-        }
-        // End of image resizing code
+    // Add image resizing code
+    if (extension_loaded('gd')) {
+        // Create an image resource from the file content
+        $sourceImage = imagecreatefromstring($moviePoster);
+
+        // Specify the new width and height for the resized image
+        $newWidth = 182; 
+        $newHeight = 268; 
+
+        // Create a new image resource with the desired width and height
+        $resizedImage = imagecreatetruecolor($newWidth, $newHeight);
+
+        // Resize the image
+        imagecopyresampled($resizedImage, $sourceImage, 0, 0, 0, 0, $newWidth, $newHeight, imagesx($sourceImage), imagesy($sourceImage));
+
+        // Output the resized image to a variable
+        ob_start();
+        imagejpeg($resizedImage, null, 100); // You can change the image format and quality if needed
+        $resizedImageData = ob_get_clean();
+
+        // Clean up resources
+        imagedestroy($sourceImage);
+        imagedestroy($resizedImage);
+
     }
+ 
+}
+
 
     // Assuming you have a column named 'category_id' in your movie table to store the category ID.
     $sql = "INSERT INTO movie (category_id, Title, Release_Date, Age_Rating, Description, Language, Runtime, Movie_Poster, Director, Actors) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -149,8 +173,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $userMovieStmt->close();
                 }
 
-                // Continue with the rest of your code...
 
+                $successMessage = "Movie successfully added!";
             } else {
                 throw new Exception($categoryStmt->error);
             }
@@ -165,21 +189,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="Styles.css">
-    <title>Movie CMS</title>
+    <link rel="stylesheet" href="styles.css">
+
 </head>
 
 <body>
     <div class="add-movie">
         <h2>Add Movie</h2>
         <ul>
+            <?php
+        if (isAdminLoggedIn()) {
+                echo '<li><a href="user-management.php">go back to manage users</a></li>';
+                
+            }
+            ?>
             <li><a href="index.php">Home</a></li>
         </ul>
+        <?php if (!empty($successMessage)) : ?>
+            <div class="success-message">
+                <?php echo $successMessage; ?>
+            </div>
+        <?php endif; ?>
+
         <form action="post.php" method="post" enctype="multipart/form-data">
 
             <label for="category">Category:</label>

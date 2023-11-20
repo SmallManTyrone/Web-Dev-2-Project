@@ -27,6 +27,9 @@ function isAdminLoggedIn() {
 
 
 
+
+
+
 function authenticateAdmin($db, $username, $password) {
     // Check the 'admins' table for admin login
     $admin_sql = "SELECT * FROM admins WHERE Username = ?";

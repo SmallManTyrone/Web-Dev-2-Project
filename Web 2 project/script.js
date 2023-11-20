@@ -4,3 +4,4 @@ document.addEventListener("click", function() {
         successMessageContainer.style.display = "none";
     }
 });
+

@@ -1,4 +1,8 @@
 <?php
+
+require('authenticate.php');
+
+
 $servername = "localhost"; // Replace with your database server
 $username = "serveruser"; // Replace with your database username
 $password = "gorgonzola7!"; // Replace with your database password
@@ -40,12 +44,21 @@ if (isset($_POST['viewCategory'])) {
 <head>
     <meta charset="UTF-8">
     <title>Manage Categories</title>
+    <link rel="stylesheet" href="styles.css">
+
 </head>
 
 <body>
     <h1>Manage Categories</h1>
+    <ul>
+    <?php
+        if (isAdminLoggedIn()) {
+                echo '<li><a href="user-management.php">go back to manage users</a></li>';
+                
+            }
+            ?>
     <li><a href="index.php">Home</a></li>
-
+        </ul>
     <!-- Form for creating a new category -->
     <h2>Add New Category</h2>
     <form action="process_category.php" method="post">
