@@ -331,3 +331,59 @@ table a:hover {
 
 
 
+/* Style the container for mini-posts */
+.mini-posts-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    gap: 20px; /* Add some space between mini-posts */
+}
+
+/* Style each mini-post */
+.mini-post {
+    width: calc(20% - 20px); /* Adjusted width for five mini-posts in a row with some spacing */
+    margin: 10px;
+    text-align: center;
+    box-sizing: border-box;
+    transition: transform 0.3s; /* Add a subtle animation on hover */
+    cursor: pointer;
+}
+
+/* Improve the styling of the mini-post content */
+.mini-post h4 {
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+.mini-post img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px; /* Slightly increase the border radius */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Add a subtle box shadow for depth */
+}
+
+/* Adjust the styling of the "Edit Movie" link */
+.mini-post a {
+    text-decoration: none;
+    color: #007bff;
+    font-weight: bold;
+    display: block;
+    margin-top: 10px;
+    transition: color 0.3s;
+}
+
+.mini-post:hover {
+    transform: translateY(-5px); /* Lift the mini-post on hover */
+}
+
+.mini-post:hover a {
+    color: #0056b3; /* Change link color on hover */
+}
+
+
+
+
+
+
+
+

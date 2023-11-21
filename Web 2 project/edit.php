@@ -458,9 +458,15 @@ if ($userIsAdmin) {
 </head>
 
 <body>
-    <ul>
-        <li><a href="index.php">Home</a></li>
-    </ul>
+<ul>
+    <?php
+        if (isAdminLoggedIn()) {
+                echo '<li><a href="user-management.php">go to manage users</a></li>';
+                
+            }
+            ?>
+    <li><a href="index.php">Home</a></li>
+        </ul>
     <div class="movie-details-and-edit">
         <!-- Movie details -->
         <div class="movie-details">

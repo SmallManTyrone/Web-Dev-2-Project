@@ -44,7 +44,7 @@ if (isset($_POST['viewCategory'])) {
 <head>
     <meta charset="UTF-8">
     <title>Manage Categories</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="poststyles.css">
 
 </head>
 
@@ -53,7 +53,7 @@ if (isset($_POST['viewCategory'])) {
     <ul>
     <?php
         if (isAdminLoggedIn()) {
-                echo '<li><a href="user-management.php">go back to manage users</a></li>';
+                echo '<li><a href="user-management.php">go to manage users</a></li>';
                 
             }
             ?>

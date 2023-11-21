@@ -193,17 +193,17 @@ if ($_FILES['movie_poster']['error'] === UPLOAD_ERR_OK) {
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="styles.css">
-
+    <link rel="stylesheet" href="poststyles.css">
 </head>
 
 <body>
+    
     <div class="add-movie">
         <h2>Add Movie</h2>
         <ul>
             <?php
         if (isAdminLoggedIn()) {
-                echo '<li><a href="user-management.php">go back to manage users</a></li>';
+                echo '<li><a href="user-management.php">go to manage users</a></li>';
                 
             }
             ?>

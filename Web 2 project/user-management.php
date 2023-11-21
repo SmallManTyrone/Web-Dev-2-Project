@@ -1,4 +1,6 @@
 <?php
+
+require('authenticate.php');
 // Database connection (use your actual database details)
 $servername = "localhost";
 $username = "serveruser";
@@ -10,6 +12,7 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
+
 
 // Create User (Create)
 if (isset($_POST['create_user'])) {
@@ -87,6 +90,17 @@ if (isset($_POST['create_genre'])) {
     }
 }
 
+// Fetch existing posts from the database with only title and picture
+$postsResult = $conn->query("SELECT * FROM movie");
+
+// Fetch all rows into an array
+$posts = [];
+while ($post = $postsResult->fetch_assoc()) {
+    $posts[] = $post;
+}
+
+// Close the connection after fetching posts
+$conn->close();
 ?>
 <!DOCTYPE html>
 <html>
@@ -97,21 +111,24 @@ if (isset($_POST['create_genre'])) {
 </head>
 
 <body>
-    <h2>User Management</h2>
+    <h2>User and Content Management</h2>
     <a href="index.php" class="nav-link">Home</a>
     <a href="create-user.php" class="nav-link">Create User</a>
+    
+        <a href="post.php" class="nav-link">Go to Post</a> 
+        <a href="CRUDcategory.php" class="nav-link">Go to CRUDcategory</a>
+    
   
 
-    <!-- Display Users -->
-    <h3>Users</h3>
-    <table>
-        <tr>
-            <th>ID</th>
-            <th>Username</th>
-            <th>Email</th>
-            <th>Actions</th>
-        </tr>
-        <?php while ($row = $result->fetch_assoc()) { ?>
+<!-- Display Users -->
+<h3>Users</h3>
+<table>
+    <tr>
+        <th>Username</th>
+        <th>Email</th>
+        <th>Actions</th>
+    </tr>
+    <?php foreach ($result as $row) { ?>
         <tr>
             <td><?php echo $row['Username']; ?></td>
             <td><?php echo $row['email']; ?></td>
@@ -121,13 +138,23 @@ if (isset($_POST['create_genre'])) {
                     onclick="return confirm('Are you sure?')">Delete</a>
             </td>
         </tr>
-        <?php } ?>
-    </table>
+    <?php } ?>
+</table>
 
-    <p>
-        <a href="post.php">Go to Post</a> |
-        <a href="CRUDcategory.php">Go to CRUDcategory</a>
-    </p>
+<h3>Existing Posts</h3>
+<div class="mini-posts-container">
+    <?php foreach ($posts as $post) { ?>
+        <div class="mini-post">
+            <a href="show.php?id=<?php echo $post['MovieID']; ?>">
+                <h4><?php echo $post['Title']; ?></h4>
+                <img src="data:image/jpeg;base64,<?php echo base64_encode($post['Movie_Poster']); ?>" alt="<?php echo $post['Title']; ?> Poster" width="100">
+            </a>
+            <a href="edit.php?id=<?php echo $post['MovieID']; ?>">Edit Movie</a>
+        </div>
+    <?php } ?>
+</div>
+
+   
 
 </body>
 

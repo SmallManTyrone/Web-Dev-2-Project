@@ -87,7 +87,7 @@ $categoryResult = $conn->query($categorySql);
             if (isAdminLoggedIn()) {
                 echo '<li><a href="sort-list.php">Sort Movies</a></li>';
                 echo '<li><a href="logout.php">Log Out</a></li>';
-                echo '<li><a href="user-management.php">User Management</a>';
+                echo '<li><a href="user-management.php">User Management and Content Management</a>';
             } else if (isLoggedIn()) {
                 echo '<li><a href="post.php">Add Movie</a></li>';
                 echo '<li><a href="sort-list.php">Sort Movies</a></li>';

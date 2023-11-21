@@ -1,6 +1,7 @@
 <?php
 require('authenticate.php');
 
+
 function displayComments($conn, $movieId)
 {
     // In displayComments function
@@ -51,7 +52,6 @@ function displayComments($conn, $movieId)
         echo "<p>No comments yet. Be the first to comment!</p>";
     }
 }
-
 
 // Check if the 'id' parameter is provided in the URL
 if (isset($_GET['id'])) {
@@ -106,7 +106,6 @@ if (isset($_GET['id'])) {
 
         // Debugging line - print category and genres information
         echo "Genres: " . $genres . "<br>";
-
         ?>
 
 <!DOCTYPE html>
@@ -123,7 +122,14 @@ if (isset($_GET['id'])) {
 <body>
     <div class='movie-cms-box'>
         <h1>Movie Details</h1>
-        <li><a href="index.php">Home</a></li>
+        <ul>
+            <?php
+                    if (isAdminLoggedIn()) {
+                        echo '<li><a href="user-management.php">go to manage users</a></li>';
+                    }
+                    ?>
+            <li><a href="index.php">Home</a></li>
+        </ul>
         <div class='movie'>
             <h2><?php echo $title; ?></h2>
             <p>Release Date: <?= $releaseDate; ?></p>
@@ -138,21 +144,29 @@ if (isset($_GET['id'])) {
 
             <img src='data:image/jpeg;base64,<?= base64_encode($poster); ?>' alt='Movie Poster' width='300'>
         </div>
-
         <!-- Comment Form -->
-        <div class='comment-form'>
-            <h2>Add a Comment</h2>
-            <form action='post_comment.php' method='post'>
-                <input type='hidden' name='movie_id' value='<?= $movieId; ?>'>
-                <label for='name'>Name:</label>
-                <input type='text' id='name' name='name' required>
-                <label for='comment'>Comment:</label>
-                <textarea id='comment' name='comment' required></textarea>
-                <button type='submit'>Submit Comment</button>
-            </form>
-        </div>
+<div class='comment-form'>
+    <h2>Add a Comment</h2>
+    <form action='post_comment.php' method='post' onsubmit='return validateCaptcha();'>
+        <input type='hidden' name='movie_id' value='<?= $movieId; ?>'>
+        <label for='name'>Name:</label>
+        <?php
+        if (isset($_SESSION['username'])) {
+            $username = $_SESSION['username'];
+            echo "<input type='text' id='name' name='name' value='$username' readonly>";
+        } else {
+            echo "<input type='text' id='name' name='name' required>";
+        }
+        ?>
+        <label for='comment'>Comment:</label>
+        <textarea id='comment' name='comment' required></textarea>
+        <button type='submit'>Submit Comment</button>
+    </form>
+</div>
 
-      
+
+
+
         <?php displayComments($conn, $movieId); ?>
     </div>
 </body>
@@ -169,3 +183,5 @@ if (isset($_GET['id'])) {
     echo "Movie ID not provided.";
 }
 ?>
+
+<?php
