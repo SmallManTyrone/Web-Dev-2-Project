@@ -380,6 +380,46 @@ table a:hover {
     color: #0056b3; /* Change link color on hover */
 }
 
+/* Navigation bar styles */
+nav {
+    background-color: #333; /* Dark background color */
+    padding: 10px;
+}
+
+/* Search form styles */
+nav form {
+    display: flex;
+    justify-content: space-between;
+    max-width: 600px; /* Adjust the max-width as needed */
+    margin: 0 auto; /* Center the form horizontally */
+}
+
+nav input[type="text"] {
+    padding: 8px;
+    width: 70%;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+nav button {
+    padding: 8px 15px;
+    background-color: blue; /* Green button color */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Style for the input placeholder text */
+nav input::placeholder {
+    color: #999; /* Lighter placeholder text color */
+}
+
+/* Hover effect on the button */
+nav button:hover {
+    background-color: blue; /* Darker green on hover */
+}
+
 
 
 

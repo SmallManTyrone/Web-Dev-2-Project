@@ -54,6 +54,16 @@ $result = $conn->query($sql);
     <!-- Movie CMS header -->
     <div class='movie-cms-box'>
         <h1>Welcome to Movie CMS</h1>
+        <nav>
+            <div>
+
+                <!-- Search bar -->
+                <form action="search.php" method="GET">
+                    <input type="text" name="q" placeholder="Search movies...">
+                    <button type="submit">Search</button>
+                </form>
+            </div>
+        </nav>
         <a href='index.php' class='nav-link'>Home</a>
         <div class='sorting-options'>
             <form method='post' action=''>

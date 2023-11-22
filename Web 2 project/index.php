@@ -1,4 +1,5 @@
 <?php
+
 /*
 Name: Tyson La
 Date: September 20th
@@ -18,17 +19,7 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-if (isset($_SESSION['username'])) {
-    $username = $_SESSION['username'];
 
-    if (isset($_SESSION['is_admin']) && $_SESSION['is_admin']) {
-        echo 'Hello, Admin ' . $username;
-    } else {
-        echo 'Hello, User ' . $username;
-    }
-} else {
-    echo 'Hello, Guest';
-}
 
 $sql = "SELECT movie.*, GROUP_CONCAT(genre.name SEPARATOR ', ') AS genre_list
         FROM movie
@@ -72,7 +63,30 @@ $categoryResult = $conn->query($categorySql);
 
 <body>
     <div class="movie-cms-box">
+        <?php
+    if (isset($_SESSION['username'])) {
+    $username = $_SESSION['username'];
+
+    if (isset($_SESSION['is_admin']) && $_SESSION['is_admin']) {
+        echo 'Hello, Admin ' . $username;
+    } else {
+        echo 'Hello, User ' . $username;
+    }
+} else {
+    echo 'Hello, Guest';
+}
+?>
         <h1>Welcome to Movie CMS</h1>
+        <nav>
+            <div>
+
+                <!-- Search bar -->
+                <form action="search.php" method="GET">
+                    <input type="text" name="q" placeholder="Search movies...">
+                    <button type="submit">Search</button>
+                </form>
+            </div>
+        </nav>
         <?php
         if (isset($_SESSION['login_success']) && $_SESSION['login_success'] === true) {
             echo '<div class="success-message-container" id="successMessageContainer">';
@@ -87,7 +101,7 @@ $categoryResult = $conn->query($categorySql);
             if (isAdminLoggedIn()) {
                 echo '<li><a href="sort-list.php">Sort Movies</a></li>';
                 echo '<li><a href="logout.php">Log Out</a></li>';
-                echo '<li><a href="user-management.php">User Management and Content Management</a>';
+                echo '<li><a href="user_management.php">User Management and Content Management</a>';
             } else if (isLoggedIn()) {
                 echo '<li><a href="post.php">Add Movie</a></li>';
                 echo '<li><a href="sort-list.php">Sort Movies</a></li>';

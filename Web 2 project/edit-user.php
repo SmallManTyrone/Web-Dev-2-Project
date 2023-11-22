@@ -1,4 +1,5 @@
 <?php
+require('authenticate.php');
 // Database connection (use your actual database details)
 $servername = "localhost";
 $username = "serveruser";
@@ -55,10 +56,19 @@ if (isset($_GET['user_id'])) {
 <html>
 <head>
     <title>Edit User</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<ul>
+            <?php
+                     if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'user_management.php') !== false) {
+                        echo '<li><a href="user_management.php">Go back to manage users</a></li>';
+                    }
+                    ?>
+            <li><a href="index.php">Home</a></li>
+        </ul>
+    
     <h2>Edit User</h2>
-
     <form method="post" action="edit-user.php?user_id=<?php echo $user_id; ?>">
         <input type="text" name="new_username" placeholder="New Username" value="<?php echo $row['Username']; ?>" required>
         <input type="email" name="new_email" placeholder="New Email" value="<?php echo $row['email']; ?>" required>

@@ -49,6 +49,14 @@ if (isset($_POST['create_user'])) {
     <title>Create User</title>
 </head>
 <body>
+<ul>
+            <?php
+                     if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'user_management.php') !== false) {
+                        echo '<li><a href="user_management.php">Go back to manage users</a></li>';
+                    }
+                    ?>
+            <li><a href="index.php">Home</a></li>
+        </ul>
     <h2>Create User</h2>
     <form method="post" action="create-user.php">
         <input type="text" name="username" placeholder="Username" required><br>

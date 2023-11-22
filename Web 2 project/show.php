@@ -97,15 +97,11 @@ if (isset($_GET['id'])) {
         if ($categoryResult->num_rows > 0) {
             $categoryRow = $categoryResult->fetch_assoc();
             $category = $categoryRow['category_name'];
-            echo "Category ID: " . $categoryId . "<br>";
-            echo "Category Name: " . $category . "<br>";
         } else {
             $category = 'N/A';
-            echo "No category found for ID: " . $categoryId;
         }
 
-        // Debugging line - print category and genres information
-        echo "Genres: " . $genres . "<br>";
+    
         ?>
 
 <!DOCTYPE html>
@@ -122,10 +118,19 @@ if (isset($_GET['id'])) {
 <body>
     <div class='movie-cms-box'>
         <h1>Movie Details</h1>
+        <nav>
+            <div>
+                <!-- Search bar -->
+                <form action="search.php" method="GET">
+                    <input type="text" name="q" placeholder="Search movies...">
+                    <button type="submit">Search</button>
+                </form>
+            </div>
+        </nav>
         <ul>
             <?php
-                    if (isAdminLoggedIn()) {
-                        echo '<li><a href="user-management.php">go to manage users</a></li>';
+                    if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'user_management.php') !== false) {
+                        echo '<li><a href="user_management.php">Go back to manage users</a></li>';
                     }
                     ?>
             <li><a href="index.php">Home</a></li>
@@ -145,12 +150,12 @@ if (isset($_GET['id'])) {
             <img src='data:image/jpeg;base64,<?= base64_encode($poster); ?>' alt='Movie Poster' width='300'>
         </div>
         <!-- Comment Form -->
-<div class='comment-form'>
-    <h2>Add a Comment</h2>
-    <form action='post_comment.php' method='post' onsubmit='return validateCaptcha();'>
-        <input type='hidden' name='movie_id' value='<?= $movieId; ?>'>
-        <label for='name'>Name:</label>
-        <?php
+        <div class='comment-form'>
+            <h2>Add a Comment</h2>
+            <form action='post_comment.php' method='post' onsubmit='return validateCaptcha();'>
+                <input type='hidden' name='movie_id' value='<?= $movieId; ?>'>
+                <label for='name'>Name:</label>
+                <?php
         if (isset($_SESSION['username'])) {
             $username = $_SESSION['username'];
             echo "<input type='text' id='name' name='name' value='$username' readonly>";
@@ -158,11 +163,11 @@ if (isset($_GET['id'])) {
             echo "<input type='text' id='name' name='name' required>";
         }
         ?>
-        <label for='comment'>Comment:</label>
-        <textarea id='comment' name='comment' required></textarea>
-        <button type='submit'>Submit Comment</button>
-    </form>
-</div>
+                <label for='comment'>Comment:</label>
+                <textarea id='comment' name='comment' required></textarea>
+                <button type='submit'>Submit Comment</button>
+            </form>
+        </div>
 
 
 
@@ -184,4 +189,3 @@ if (isset($_GET['id'])) {
 }
 ?>
 
-<?php

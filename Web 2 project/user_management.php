@@ -111,24 +111,34 @@ $conn->close();
 </head>
 
 <body>
+
     <h2>User and Content Management</h2>
+    <nav>
+        <div>
+            <!-- Search bar -->
+            <form action="search.php" method="GET">
+                <input type="text" name="q" placeholder="Search movies...">
+                <button type="submit">Search</button>
+            </form>
+        </div>
+    </nav>
     <a href="index.php" class="nav-link">Home</a>
     <a href="create-user.php" class="nav-link">Create User</a>
-    
-        <a href="post.php" class="nav-link">Go to Post</a> 
-        <a href="CRUDcategory.php" class="nav-link">Go to CRUDcategory</a>
-    
-  
 
-<!-- Display Users -->
-<h3>Users</h3>
-<table>
-    <tr>
-        <th>Username</th>
-        <th>Email</th>
-        <th>Actions</th>
-    </tr>
-    <?php foreach ($result as $row) { ?>
+    <a href="post.php" class="nav-link">Go to Post</a>
+    <a href="CRUDcategory.php" class="nav-link">Go to CRUDcategory</a>
+
+
+
+    <!-- Display Users -->
+    <h3>Users</h3>
+    <table>
+        <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Actions</th>
+        </tr>
+        <?php foreach ($result as $row) { ?>
         <tr>
             <td><?php echo $row['Username']; ?></td>
             <td><?php echo $row['email']; ?></td>
@@ -138,23 +148,24 @@ $conn->close();
                     onclick="return confirm('Are you sure?')">Delete</a>
             </td>
         </tr>
-    <?php } ?>
-</table>
+        <?php } ?>
+    </table>
 
-<h3>Existing Posts</h3>
-<div class="mini-posts-container">
-    <?php foreach ($posts as $post) { ?>
+    <h3>Existing Posts</h3>
+    <div class="mini-posts-container">
+        <?php foreach ($posts as $post) { ?>
         <div class="mini-post">
             <a href="show.php?id=<?php echo $post['MovieID']; ?>">
                 <h4><?php echo $post['Title']; ?></h4>
-                <img src="data:image/jpeg;base64,<?php echo base64_encode($post['Movie_Poster']); ?>" alt="<?php echo $post['Title']; ?> Poster" width="100">
+                <img src="data:image/jpeg;base64,<?php echo base64_encode($post['Movie_Poster']); ?>"
+                    alt="<?php echo $post['Title']; ?> Poster" width="100">
             </a>
             <a href="edit.php?id=<?php echo $post['MovieID']; ?>">Edit Movie</a>
         </div>
-    <?php } ?>
-</div>
+        <?php } ?>
+    </div>
 
-   
+
 
 </body>
 

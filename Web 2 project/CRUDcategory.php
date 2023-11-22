@@ -49,13 +49,22 @@ if (isset($_POST['viewCategory'])) {
 </head>
 
 <body>
+<nav>
+    <div>
+
+        <!-- Search bar -->
+        <form action="search.php" method="GET">
+            <input type="text" name="q" placeholder="Search movies...">
+            <button type="submit">Search</button>
+        </form>
+    </div>
+</nav>
     <h1>Manage Categories</h1>
     <ul>
     <?php
-        if (isAdminLoggedIn()) {
-                echo '<li><a href="user-management.php">go to manage users</a></li>';
-                
-            }
+      if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'user_management.php') !== false) {
+        echo '<li><a href="user_management.php">Go back to manage users</a></li>';
+    }
             ?>
     <li><a href="index.php">Home</a></li>
         </ul>

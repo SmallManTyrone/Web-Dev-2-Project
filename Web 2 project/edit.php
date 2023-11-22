@@ -45,7 +45,6 @@ if ($count == 0) {
         // Handle the error as needed
     }
 } else {
-    echo "Foreign key constraint already exists.";
 }
 
 // Function to get the category name based on category ID
@@ -111,9 +110,6 @@ if (isset($_GET['id']) && isInteger($_GET['id'])) {
   
 }
 
-// Debug: Print out admin-related session variables
-echo "Admin ID in Session: " . (isset($_SESSION['admin_id']) ? $_SESSION['admin_id'] : 'Not set') . "<br>";
-echo "Is Admin in Session: " . (isset($_SESSION['is_admin']) ? $_SESSION['is_admin'] : 'Not set') . "<br>";
 
 if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true) {
     // This block will execute if $_SESSION['is_admin'] is set to true
@@ -129,10 +125,6 @@ $userIsOwner = false;
 if ($loggedInUserId && $movieUserID && $loggedInUserId == $movieUserID) {
     $userIsOwner = true;
 }
-echo "Debug - Logged-in User ID: $loggedInUserId<br>";
-echo "Debug - Movie Owner UserID: $movieUserID<br>";
-
-echo "Debug - Session Data: " . print_r($_SESSION, true) . "<br>";
 
 
 // Retrieve the list of genres associated with the movie
@@ -155,7 +147,6 @@ $categoryNameStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
 
 if ($categoryNameStmt->execute()) {
     $categoryName = $categoryNameStmt->fetchColumn();
-    echo "Debug - Retrieved Category Name: $categoryName";
 } else {
     echo "Debug - Error executing SQL query: " . print_r($categoryNameStmt->errorInfo(), true);
 }
@@ -170,8 +161,6 @@ $currentCategoryStmt = $conn->prepare($currentCategorySql);
 $currentCategoryStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
 $currentCategoryStmt->execute();
 $currentCategoryId = $currentCategoryStmt->fetchColumn();
-
-echo "Debug - Current Category ID in movie_category: $currentCategoryId<br>";
 
 
 // After retrieving $currentCategoryId, set the default value
@@ -192,9 +181,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $director = filter_input(INPUT_POST, 'director', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     $actors = filter_input(INPUT_POST, 'actors', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     $selectedCategoryId = filter_input(INPUT_POST, 'category', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-
-    echo "Debug - Selected Category ID: " . (is_array($selectedCategoryId) ? 'No category selected' : $selectedCategoryId);
-
 
 
     // Identify categories to be added and removed
@@ -265,18 +251,35 @@ foreach ($categoriesToRemove as $categoryId) {
     }
 
     if (isset($_POST['confirmDelete']) && $userIsAdmin) {
-        // Handle admin's confirmation to delete the movie
-        $deleteSql = "DELETE FROM movie WHERE MovieID = :movieId";
-        $deleteStmt = $conn->prepare($deleteSql);
-        $deleteStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
+        // Delete associated comments
+        $deleteCommentsSql = "DELETE FROM comments WHERE movie_id = :movieId";
+        $deleteCommentsStmt = $conn->prepare($deleteCommentsSql);
+        $deleteCommentsStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
     
-        if ($deleteStmt->execute()) {
-            echo "Movie deleted successfully.";
-            // Movie deleted successfully, redirect to the index page
-            header("Location: index.php");
-            exit();
-        } else {
-            echo "Error deleting the movie: " . $deleteStmt->errorInfo()[2];
+        try {
+            $deleteCommentsStmt->execute();
+        } catch (PDOException $e) {
+            echo "Error deleting associated comments: " . $e->getMessage();
+            // Handle the error as needed
+        }
+    
+        // Now, delete the movie
+        $deleteMovieSql = "DELETE FROM movie WHERE MovieID = :movieId";
+        $deleteMovieStmt = $conn->prepare($deleteMovieSql);
+        $deleteMovieStmt->bindParam(':movieId', $movieId, PDO::PARAM_INT);
+    
+        try {
+            if ($deleteMovieStmt->execute()) {
+                echo "Movie deleted successfully.";
+                // Movie deleted successfully, redirect to the index page
+                header("Location: index.php");
+                exit();
+            } else {
+                echo "Error deleting the movie.";
+            }
+        } catch (PDOException $e) {
+            echo "Error deleting the movie: " . $e->getMessage();
+            // Handle the error as needed
         }
     }
     
@@ -410,35 +413,8 @@ $updateCategoryStmt->bindValue(':categoryId', $selectedCategoryId, $selectedCate
             echo "Error updating the movie: " . $updateStmt->errorInfo()[2];
         }
 
-        // If you want to fetch category name instead of ID, you can use the getCategoryName function
     }
 }
-
-// Debug: Print out user information
-echo "User Is Admin: " . ($userIsAdmin ? 'Yes' : 'No') . "<br>";
-echo "User Is Owner: " . ($userIsOwner ? 'Yes' : 'No') . "<br>";
-
-echo "User Is Owner: " . ($userIsOwner ? 'Yes' : 'No') . "<br>";
-echo "Movie Owner UserID: " . $movieUserID . "<br>";
-echo "Logged-in User ID: " . $loggedInUserId . "<br>";
-
-if ($userIsOwner) {
-    echo "User is the owner.";
-} else {
-    echo "User is not the owner.";
-}
-
-if ($userIsAdmin) {
-    echo "User is an admin.";
-} elseif ($userIsOwner) {
-    echo "User is the owner.";
-} else {
-    echo "User is not an admin and not the owner.";
-}
-
-
-
-
 
 
 
@@ -452,22 +428,14 @@ if ($userIsAdmin) {
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="Styles.css">
+    <link rel="stylesheet" href="styles.css">
 
     <title>Movie CMS</title>
 </head>
 
 <body>
-<ul>
-    <?php
-        if (isAdminLoggedIn()) {
-                echo '<li><a href="user-management.php">go to manage users</a></li>';
-                
-            }
-            ?>
-    <li><a href="index.php">Home</a></li>
-        </ul>
     <div class="movie-details-and-edit">
+
         <!-- Movie details -->
         <div class="movie-details">
             <h2>Title: <?= $title ?></h2>
@@ -484,6 +452,14 @@ if ($userIsAdmin) {
         <!-- Edit form -->
         <div class="movie-edit-form">
             <h2>Edit Movie</h2>
+            <ul>
+                <?php
+      if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'user_management.php') !== false) {
+        echo '<li><a href="user_management.php">Go back to manage users</a></li>';
+    }
+            ?>
+                <li><a href="index.php">Home</a></li>
+            </ul>
             <form action="edit.php?id=<?= $movieId; ?>" method="post" enctype="multipart/form-data">
                 <p>Category:
 
