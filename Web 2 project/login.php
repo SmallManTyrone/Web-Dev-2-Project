@@ -40,8 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE, edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="Styles.css">
-    <script src="success_message.js"></script>
+    <link rel="stylesheet" href="styles.css">
     <title>Login</title>
 </head>
 <body>
@@ -57,14 +56,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
         echo '<p><a href="registration.php">Register</a></p>';
     }
     ?>
-    <form action="login_process.php" method="post" onsubmit="showLoginSuccess()">
+    <form class = "login" action="login_process.php" method="post" onsubmit="showLoginSuccess()">
         <label for="username">Username:</label>
         <input type="text" id="username" name="username" required>
 
         <label for="password">Password:</label>
         <input type="password" id="password" name="password" required>
 
-        <button type="submit" name="login">Login</button>
+        <button class="login-button" type="submit" name="login">Login</button>
     </form>
 </div>
 </body>

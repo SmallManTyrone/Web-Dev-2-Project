@@ -24,28 +24,28 @@ h1 {
     color: #333;
 }
 
-.movie-header {
+.movie-header, .nav-link, .edit-button, nav input[type="text"], nav button {
     margin-bottom: 20px;
 }
 
-.nav-link {
+.nav-link, .edit-button, ul li {
     text-decoration: none;
-    color: #007bff;
     font-weight: bold;
-    margin-right: 20px;
-    padding: 10px 20px; /* Add padding to make it look like a button */
-    border: 2px solid #007bff; /* Add a border */
-    background-color: transparent; /* Make the background transparent */
-    border-radius: 5px; /* Round the corners */
+}
+
+.nav-link, ul li a {
+    color: #007bff;
+    padding: 10px 20px;
+    border: 2px solid #007bff;
+    border-radius: 5px;
     transition: background-color 0.3s, color 0.3s;
-    display: inline-block; /* Display as an inline block */
+    display: inline-block;
 }
 
-.nav-link:hover {
-    background-color: #007bff; /* Change background color on hover */
-    color: #fff; /* Change text color on hover */
+.nav-link:hover, ul li a:hover {
+    background-color: #007bff;
+    color: #fff;
 }
-
 
 .movie-list {
     display: flex;
@@ -90,14 +90,12 @@ p {
     color: #555;
 }
 
-/* Style the movie poster image */
 img {
     max-width: 100%;
     height: auto;
     border-radius: 5px;
 }
 
-/* Custom styles for movie details */
 .movie-details {
     display: none;
     background-color: #f4f4f4;
@@ -111,7 +109,6 @@ img {
     display: block;
 }
 
-/* Style the edit form */
 .movie-edit-form {
     background-color: #fff;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -142,20 +139,6 @@ img {
     border-radius: 5px;
 }
 
-/* Style for the "Edit" form */
-.movie-edit-form {
-    display: inline-block;
-    width: 45%; /* Adjust the width as needed */
-    vertical-align: top;
-    padding: 10px;
-    border: 1px solid #ccc;
-}
-
-.movie-edit-form button:hover {
-    background-color: #0056b3;
-}
-
-/* Style the "Edit" button */
 .edit-button {
     display: inline-block;
     padding: 5px 10px;
@@ -231,10 +214,7 @@ img {
     display: inline-block; /* Ensure each menu item is displayed inline */
 }
 
-.navigation-menu li a:hover {
-    background-color: #007bff; /* Change background color on hover */
-    color: #fff; /* Change text color on hover */
-}
+
 
 .success-message {
     background-color: #4CAF50; /* Green background color */
@@ -276,33 +256,18 @@ img {
     gap: 20px;
 }
 
-/* Style the movie details */
-.movie-details {
+.movie-details,
+.movie-edit-form,
+.movie-details-preview {
     background-color: #f4f4f4;
-    padding: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    padding: 20px; /* Increased padding for consistency */
     border-radius: 5px;
+    flex: 1;
     text-align: left;
     font-size: 14px;
-    flex: 1;
 }
 
-/* Style the edit form */
-.movie-edit-form {
-    background-color: #fff;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    border-radius: 5px;
-    flex: 1;
-}
-
-/* Style the preview section */
-.movie-details-preview {
-    background-color: #fff;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    border-radius: 5px;
-    flex: 1;
-}
 
 table {
     width: 100%;
@@ -403,7 +368,7 @@ nav input[type="text"] {
 
 nav button {
     padding: 8px 15px;
-    background-color: blue; /* Green button color */
+    background-color: blue; 
     color: white;
     border: none;
     border-radius: 4px;
@@ -419,6 +384,125 @@ nav input::placeholder {
 nav button:hover {
     background-color: blue; /* Darker green on hover */
 }
+
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 10px;
+    background-color: #333; /* Dark background color for navigation */
+}
+
+ul li {
+    display: inline;
+    margin-right: 10px;
+}
+
+ul li a {
+    text-decoration: none;
+    color: white;
+}
+
+h1 {
+    text-align: center;
+    color: #333; /* Dark text color */
+}
+
+.login-box {
+    max-width: 300px;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: #fff; /* White background color */
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Light shadow */
+}
+
+form .login {
+    display: flex;
+    flex-direction: row;
+}
+
+label {
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+input {
+    padding: 8px;
+    margin-bottom: 16px;
+    border: 1px solid #ccc; /* Light border color */
+    border-radius: 4px;
+}
+
+button {
+    padding: 10px;
+    background-color: blue; 
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Style for error messages */
+.error-message {
+    color: #ff3333; /* Red error message color */
+    margin-bottom: 10px;
+}
+
+/* Responsive styles for small screens */
+@media (max-width: 600px) {
+    .login-box {
+        width: 80%;
+    }
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+    .movie-cms-box,
+    .movie-edit-form,
+    .movie-details,
+    .movie-details-preview {
+        width: 90%;
+        max-width: none;
+    }
+}
+
+
+/* Style the login button */
+.login-button {
+    width: 100%; /* Make the button take up the full width */
+    background-color: green; /* Set the background color to green */
+    color: white; /* Set the text color to white */
+    padding: 10px; /* Add padding for better visual appearance */
+    border: none; /* Remove the border */
+    border-radius: 5px; /* Add border radius for rounded corners */
+    cursor: pointer;
+    transition: background-color 0.3s; /* Add a smooth transition effect on hover */
+}
+
+/* Hover effect on the login button */
+.login-button:hover {
+    background-color: darkgreen; /* Darken the background color on hover */
+}
+
+/* Style the register button */
+.logout-button {
+    color: white; /* Set the text color to white */
+    padding: 10px; /* Add padding for better visual appearance */
+    border: none; /* Remove the border */
+    border-radius: 5px; /* Add border radius for rounded corners */
+    cursor: pointer;
+    transition: background-color 0.3s; /* Add a smooth transition effect on hover */
+}
+
+/* Hover effect on the register button */
+.logout-button:hover {
+    background-color: darkred; /* Darken the background color on hover */
+}
+
+
+
+
+
 
 
 

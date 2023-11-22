@@ -100,12 +100,12 @@ $categoryResult = $conn->query($categorySql);
             <?php
             if (isAdminLoggedIn()) {
                 echo '<li><a href="sort-list.php">Sort Movies</a></li>';
-                echo '<li><a href="logout.php">Log Out</a></li>';
+                echo '<li><a href="logout.php" class= "logout-button">Log Out</a></li>';
                 echo '<li><a href="user_management.php">User Management and Content Management</a>';
             } else if (isLoggedIn()) {
                 echo '<li><a href="post.php">Add Movie</a></li>';
                 echo '<li><a href="sort-list.php">Sort Movies</a></li>';
-                echo '<li><a href="logout.php">Log Out</a></li>';
+                echo '<li><a href="logout.php" class= "logout-button">Log Out</a></li>';
                 echo '<li><a href="CRUDcategory.php">Edit Categories</a></li>';
             } else {
                 echo '<li><a href="register.php">Make Account</a></li>';

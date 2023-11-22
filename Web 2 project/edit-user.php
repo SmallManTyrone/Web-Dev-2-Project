@@ -56,7 +56,7 @@ if (isset($_GET['user_id'])) {
 <html>
 <head>
     <title>Edit User</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="Styles.css">
 </head>
 <body>
 <ul>

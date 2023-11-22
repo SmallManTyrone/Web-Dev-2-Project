@@ -47,6 +47,7 @@ if (isset($_POST['create_user'])) {
 <html>
 <head>
     <title>Create User</title>
+    <link rel="stylesheet" href="Styles.css">
 </head>
 <body>
 <ul>
