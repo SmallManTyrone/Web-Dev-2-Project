@@ -491,10 +491,14 @@ $updateCategoryStmt->bindValue(':categoryId', $selectedCategoryId, $selectedCate
 
                 <label for="title">Title:</label>
                 <input type="text" id="title" name="title" value="<?= $title; ?>" required>
+            <div>
                 <label for="releaseDate">Release Date:</label>
-                <input type="text" id="releaseDate" name="releaseDate" value="<?= $releaseDate; ?>" required>
+                <input type="date" id="releaseDate" name="releaseDate" value="<?= $releaseDate; ?>" required>
+           </div>
+           <div>
                 <label for="ageRating">Age Rating:</label>
                 <input type="text" id="ageRating" name="ageRating" value="<?= $ageRating; ?>" required>
+          </div> 
                 <label for="description">Description:</label>
                 <textarea id="description" name="description" required><?= $description; ?></textarea>
                 <label for="language">Language:</label>
@@ -507,7 +511,7 @@ $updateCategoryStmt->bindValue(':categoryId', $selectedCategoryId, $selectedCate
                 <input type="text" id="actors" name="actors" value="<?= $actors; ?>" required>
                 <label for="genres">Genres:</label>
                 <input type="text" id="genres" name="genres" value="<?= implode(', ', $genres); ?>"
-                    placeholder="Enter genres (e.g., Action, Comedy, Drama)">
+                    placeholder="Enter genres (e.g., Action, Comedy, Drama)" required>
                 <?php if (!empty($posterData)) { ?>
                 <label for="removeImage">Remove Image:</label>
                 <input type="checkbox" id="removeImage" name="removeImage" value="1">
@@ -515,11 +519,11 @@ $updateCategoryStmt->bindValue(':categoryId', $selectedCategoryId, $selectedCate
                 <label for="movie_poster">Movie Poster:</label>
                 <input type="file" id="movie_poster" name="movie_poster">
                 <?php if ($userIsAdmin === true) : ?>
-                <button type="submit" name="update">Update</button>
-                <button type="submit" name="confirmDelete">Confirm Delete</button>
+                <button class="update-button" type="submit" name="update">Update</button>
+                <button class="delete-movie" type="submit" name="confirmDelete">Confirm Delete</button>
                 <?php elseif ($userIsOwner === true) : ?>
                 <button type="submit" name="update">Update</button>
-                <button type="submit" name="delete">Delete Movie</button>
+                <button class="delete-movie" type="submit" name="delete">Delete Movie</button>
                 <?php else : ?>
                 <p>You are not authorized to delete or update this movie.</p>
                 <?php endif; ?>

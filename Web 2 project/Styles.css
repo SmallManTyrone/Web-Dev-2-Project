@@ -139,6 +139,7 @@ img {
     border-radius: 5px;
 }
 
+
 .edit-button {
     display: inline-block;
     padding: 5px 10px;
@@ -189,6 +190,8 @@ img {
     padding: 20px;
     border-radius: 5px;
 }
+
+
 
 /* Style the navigation menu */
 .navigation-menu {
@@ -495,8 +498,18 @@ button {
 }
 
 /* Hover effect on the register button */
-.logout-button:hover {
+.logout-button:hover  {
     background-color: darkred; /* Darken the background color on hover */
+}
+
+.delete-movie:hover,
+button[name="delete"]:hover {
+    background-color: darkred; /* Darken the background color on hover */
+}
+
+.update-button:hover,
+button[name="update"]:hover {
+    background-color: green; /* Darken the background color on hover */
 }
 
 

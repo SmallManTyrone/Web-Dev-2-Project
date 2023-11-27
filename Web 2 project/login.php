@@ -15,7 +15,7 @@ if (isAdminLoggedIn()) {
 $error_message = ''; // Initialize the error message
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
-    $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_STRING);
+    $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     $password = $_POST['password'];
 
     // Try authenticating as an admin
@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
     if (isset($_GET['error'])) {
         $error_message = urldecode($_GET['error']);
         echo '<div class="error-message">' . $error_message . '</div>';
-        echo '<p><a href="registration.php">Register</a></p>';
+        echo '<p><a href="register.php">Register</a></p>';
     }
     ?>
     <form class = "login" action="login_process.php" method="post" onsubmit="showLoginSuccess()">

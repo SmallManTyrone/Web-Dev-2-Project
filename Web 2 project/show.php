@@ -1,4 +1,6 @@
 <?php
+
+session_start();
 require('authenticate.php');
 
 
@@ -16,7 +18,7 @@ function displayComments($conn, $movieId)
     if ($commentsResult->num_rows > 0) {
         while ($comment = $commentsResult->fetch_assoc()) {
             $commentId = $comment['id']; // Assuming the comment ID is stored in the 'id' column
-            $name = $comment['name'];
+            $name = $comment['name'] ? $comment['name'] : 'Anonymous'; // Set default to 'Anonymous' if name is blank
             $commentText = $comment['comment'];
             $createdAt = $comment['created_at'];
             $moderationStatus = $comment['moderation_status']; // Add this line
@@ -112,6 +114,7 @@ if (isset($_GET['id'])) {
     <meta http-equiv='X-UA-Compatible' content='IE=edge'>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <link rel='stylesheet' href='styles.css'>
+    <script src="tinymce\js\tinymce\tinymce.min.js"></script>
     <title>Movie Details</title>
 </head>
 
@@ -132,6 +135,13 @@ if (isset($_GET['id'])) {
                     if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'user_management.php') !== false) {
                         echo '<li><a href="user_management.php">Go back to manage users</a></li>';
                     }
+                    if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'search.php') !== false) {
+                        // Assuming you have a variable $searchQuery containing the search query
+                        echo '<li><a href="search.php?q=' . $_SESSION['searchQuery'] . '">Go back to searches</a></li>';
+
+
+                    }
+                    
                     ?>
             <li><a href="index.php">Home</a></li>
         </ul>
@@ -151,23 +161,47 @@ if (isset($_GET['id'])) {
         </div>
         <!-- Comment Form -->
         <div class='comment-form'>
-            <h2>Add a Comment</h2>
-            <form action='post_comment.php' method='post' onsubmit='return validateCaptcha();'>
-                <input type='hidden' name='movie_id' value='<?= $movieId; ?>'>
-                <label for='name'>Name:</label>
-                <?php
-        if (isset($_SESSION['username'])) {
-            $username = $_SESSION['username'];
-            echo "<input type='text' id='name' name='name' value='$username' readonly>";
-        } else {
-            echo "<input type='text' id='name' name='name' required>";
-        }
-        ?>
-                <label for='comment'>Comment:</label>
-                <textarea id='comment' name='comment' required></textarea>
-                <button type='submit'>Submit Comment</button>
-            </form>
-        </div>
+        <h2>Add a Comment</h2>
+        <form action='post_comment.php' method='post' onsubmit='return submitForm();'>
+    <input type='hidden' name='movie_id' value='<?= $movieId; ?>'>
+    <label for='name'>Name:</label>
+    <?php
+    if (isset($_SESSION['username'])) {
+        $username = $_SESSION['username'];
+        echo "<input type='text' id='name' name='name' value='$username' readonly>";
+    } else {
+        echo "<input type='text' id='name' name='name'>";
+    }
+    ?>
+    <label for='comment'>Comment:</label>
+    <textarea id='comment' name='comment'></textarea>
+    <button type='submit' name='submitComment'>Submit Comment</button>
+</form>
+<script>
+    tinymce.init({
+        selector: '#comment',
+        plugins: 'autoresize',
+        autoresize_bottom_margin: 16,
+        menubar: false
+    });
+
+    function submitForm() {
+    // Trigger a manual save of TinyMCE content to the textarea before form submission
+    tinymce.triggerSave();
+
+    // Check if the TinyMCE editor is empty
+    var editorContent = tinymce.get('comment').getContent();
+    if (!editorContent.trim()) {
+        alert('Please enter a comment.'); // You can replace this with your own error handling
+        return false; // Prevent form submission
+    }
+
+    // Continue with other validations, if any
+    return validateCaptcha(); // Assuming validateCaptcha() is your validation function
+}
+
+</script>
+
 
 
 

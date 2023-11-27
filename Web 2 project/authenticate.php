@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 require('connect.php'); // Include your database connection script
 
 $servername = "localhost"; // Replace with your database server

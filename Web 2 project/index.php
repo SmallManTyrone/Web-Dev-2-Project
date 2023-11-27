@@ -46,6 +46,8 @@ $result = $conn->query($sql);
 
 $categorySql = "SELECT category_name FROM categories";
 $categoryResult = $conn->query($categorySql);
+
+
 ?>
 
 <!DOCTYPE html>
@@ -94,7 +96,17 @@ $categoryResult = $conn->query($categorySql);
             echo '</div>';
             $_SESSION['login_success'] = false;
         }
-        ?>
+        
+        if (isset($_SESSION['successMessage'])) {
+    // Display the success message
+    echo '<div class="success-message-container" id="successMessageContainer">';
+    echo '<div class="success-message">' . htmlspecialchars($_SESSION['successMessage'], ENT_QUOTES, 'UTF-8') . '</div>';
+    echo '</div>';
+
+    // Clear the success message from the session
+    unset($_SESSION['successMessage']);
+}
+?>
         <ul class="navigation-menu">
             <li><a href="index.php">Home</a></li>
             <?php
