@@ -31,12 +31,6 @@ function displayComments($conn, $movieId)
 
                 // Check if the logged-in user is an admin before showing the "Moderate" button
                 if (isAdminLoggedIn()) {
-                    // Add a "Moderate" button with a link to the admin_moderate_comment.php page
-                    echo "<form action='admin_moderate_comment.php' method='get'>";
-                    echo "<input type='hidden' name='comment_id' value='$commentId'>";
-                    echo "<button type='submit'>Moderate</button>";
-                    echo "</form>";
-
                     // Add an "Unhide" button if the comment is hidden
                     if ($moderationStatus == 'hidden') {
                         echo "<form action='admin_moderate_comment.php' method='post'>";

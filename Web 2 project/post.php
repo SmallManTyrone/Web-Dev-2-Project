@@ -46,43 +46,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
 
 
-  // Check for file upload errors
+       // Check if a file is uploaded
 if ($_FILES['movie_poster']['error'] === UPLOAD_ERR_OK) {
     // Read the file content
-    $moviePoster = file_get_contents($_FILES['movie_poster']['tmp_name']);
+    $originalImage = imagecreatefromstring(file_get_contents($_FILES['movie_poster']['tmp_name']));
 
-    // Add image resizing code
-    if (extension_loaded('gd')) {
-        // Create an image resource from the file content
-        $sourceImage = imagecreatefromstring($moviePoster);
+    // Specify the new width and height for the resized image
+    $newWidth = 182;
+    $newHeight = 268;
 
-        // Specify the new width and height for the resized image
-        $newWidth = 182; 
-        $newHeight = 268; 
+    // Create a new image resource with the desired width and height
+    $resizedImage = imagecreatetruecolor($newWidth, $newHeight);
 
-        // Create a new image resource with the desired width and height
-        $resizedImage = imagecreatetruecolor($newWidth, $newHeight);
-
-        // Resize the image
-        imagecopyresampled($resizedImage, $sourceImage, 0, 0, 0, 0, $newWidth, $newHeight, imagesx($sourceImage), imagesy($sourceImage));
-
-        // Output the resized image to a variable
-        ob_start();
-        imagejpeg($resizedImage, null, 100); // You can change the image format and quality if needed
-        $resizedImageData = ob_get_clean();
+    // Resize the image
+    if (imagecopyresampled($resizedImage, $originalImage, 0, 0, 0, 0, $newWidth, $newHeight, imagesx($originalImage), imagesy($originalImage))) {
+        // Save the resized image to a variable
+        ob_start();  // Start buffering the output
+        imagejpeg($resizedImage, null, 100);  // Output the resized image to the buffer
+        $resizedImageContents = ob_get_clean();  // Get the buffer contents and clean the buffer
 
         // Clean up resources
-        imagedestroy($sourceImage);
+        imagedestroy($originalImage);
         imagedestroy($resizedImage);
 
+        // Insert the resized image into the database
+        $sql = "INSERT INTO movie (category_id, Title, Release_Date, Age_Rating, Description, Language, Runtime, Movie_Poster, Director, Actors) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $successMessage = "";
+
+        try {
+            // Prepare the movie insertion statement
+            $stmt = $conn->prepare($sql);
+
+            if (!$stmt) {
+                throw new Exception($conn->error);
+            }
+
+
+            // Execute the movie insertion statement
+            if ($stmt->execute()) {
+                // Rest of your code...
+            }
+        } catch (Exception $e) {
+            echo "Error: " . $e->getMessage() . "<br>";
+        }
+    } else {
+        echo "Error resizing image<br>";
     }
- 
+} else {
+    // Handle the case where no file is uploaded or an error occurred
+    echo "Error uploading file<br>";
 }
 
-
-    // Assuming you have a column named 'category_id' in your movie table to store the category ID.
-    $sql = "INSERT INTO movie (category_id, Title, Release_Date, Age_Rating, Description, Language, Runtime, Movie_Poster, Director, Actors) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-    $successMessage = "";
     try {
         // Prepare the movie insertion statement
         $stmt = $conn->prepare($sql);
@@ -92,7 +106,7 @@ if ($_FILES['movie_poster']['error'] === UPLOAD_ERR_OK) {
         }
     
         // Bind parameters for movie insertion
-        $stmt->bind_param("isssssssss", $_POST['category'], $title, $releaseDate, $ageRating, $description, $language, $runtime, $moviePoster, $director, $actors);
+        $stmt->bind_param("isssssssss", $_POST['category'], $title, $releaseDate, $ageRating, $description, $language, $runtime, $resizedImageContents, $director, $actors);
     
         // Execute the movie insertion statement
         if ($stmt->execute()) {
@@ -177,7 +191,7 @@ if ($_FILES['movie_poster']['error'] === UPLOAD_ERR_OK) {
                 $_SESSION['successMessage'] = $successMessage;
 
                 // Redirect to index.php
-                header("Location: index.php");
+                header("Location: post.php");
                 exit();
             }
         }
@@ -274,6 +288,8 @@ if ($_FILES['movie_poster']['error'] === UPLOAD_ERR_OK) {
             <button type="submit">Add Movie</button>
         </form>
     </div>
+
+    
 </body>
 
 

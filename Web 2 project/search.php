@@ -1,5 +1,4 @@
 <?php
-
 session_start();
 $servername = "localhost";
 $username = "serveruser";
@@ -22,11 +21,17 @@ $category = isset($_GET['category']) ? $_GET['category'] : '';
 $_SESSION['searchQuery'] = $searchQuery;
 $_SESSION['searchCategory'] = $category;
 
-// Build SQL query with category filter
+// Pagination settings
+$perPage = 2; // Number of results per page
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1; // Current page, default is 1
+$offset = ($page - 1) * $perPage; // Calculate offset for SQL query
+
+// Build SQL query with category filter and pagination
 $sql = "SELECT m.* FROM movie m 
         LEFT JOIN movie_category mc ON m.MovieID = mc.movie_id
         WHERE m.title LIKE '%$searchQuery%'
-        AND ('$category' = '' OR mc.category_id = '$category')";
+        AND ('$category' = '' OR mc.category_id = '$category')
+        LIMIT $perPage OFFSET $offset";
 
 $result = $conn->query($sql);
 
@@ -43,6 +48,19 @@ $categoryResult = $conn->query($categoryQuery);
 if (!$categoryResult) {
     die("Error: " . $conn->error);
 }
+
+// Count total results for pagination
+$totalResultsSql = "SELECT COUNT(*) AS total FROM movie m 
+                   LEFT JOIN movie_category mc ON m.MovieID = mc.movie_id
+                   WHERE m.title LIKE '%$searchQuery%'
+                   AND ('$category' = '' OR mc.category_id = '$category')";
+
+$totalResultsResult = $conn->query($totalResultsSql);
+$totalResultsRow = $totalResultsResult->fetch_assoc();
+$totalResults = $totalResultsRow['total'];
+
+// Calculate total pages
+$totalPages = ceil($totalResults / $perPage);
 
 // Close the database connection
 $conn->close();
@@ -92,7 +110,17 @@ $conn->close();
         ?>
     </ul>
 
-    <!-- Add pagination links here if needed -->
+    <!-- Pagination links -->
+    <div class="pagination">
+        <?php
+        if ($totalPages > 1) {
+            for ($i = 1; $i <= $totalPages; $i++) {
+                echo "<a href='?q=$searchQuery&category=$category&page=$i'>$i</a> ";
+            }
+        }
+        ?>
+    </div>
+
     <a href="index.php">Go back to the home page</a>
 </body>
 
