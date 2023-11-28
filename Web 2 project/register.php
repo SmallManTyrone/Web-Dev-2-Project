@@ -15,6 +15,7 @@ if ($conn->connect_error) {
 }
 
 $error_message = ''; // Initialize the error message
+$submittedUsername = isset($_POST['username']) ? $_POST['username'] : ''; // Retrieve submitted username
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
     $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_STRING);
@@ -47,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <title>Registration</title>
@@ -67,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
     <form method="post" action="register.php">
         <label for="username">Username:</label>
         <input type="text" name="username" id="username" required
-            value="<?php echo isset($username) ? $username : ''; ?>" placeholder="Enter your username">
+            value="<?= htmlspecialchars($submittedUsername); ?>" placeholder="Enter your username">
         <br>
         <label for="email">Email:</label>
         <input type="email" name="email" id="email" required value="<?php echo isset($email) ? $email : ''; ?>" placeholder="Enter your email">
@@ -78,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
         <label for="confirm_password">Confirm Password:</label>
         <input type="password" name="confirm_password" id="confirm_password" required>
         <br>
-        <input type="submit" name="register" value="Register" required>
+        <input type="submit" name="register" value="Register">
     </form>
 </body>
 

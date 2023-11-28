@@ -19,6 +19,13 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+function generateSlug($title) {
+    $slug = strtolower(str_replace(' ', '-', $title));
+    $slug = preg_replace('/[^a-z0-9-]/', '', $slug); // Remove non-alphanumeric characters
+    return $slug;
+}
+
+
 
 
 $sql = "SELECT movie.*, GROUP_CONCAT(genre.name SEPARATOR ', ') AS genre_list
@@ -113,15 +120,18 @@ $categoryResult = $conn->query($categorySql);
             if (isAdminLoggedIn()) {
                 echo '<li><a href="sort-list.php">Sort Movies</a></li>';
                 echo '<li><a href="logout.php" class= "logout-button">Log Out</a></li>';
+                echo '<li><a href="recommend.php">Find me a movie</a></li>';
                 echo '<li><a href="user_management.php">User Management and Content Management</a>';
             } else if (isLoggedIn()) {
                 echo '<li><a href="post.php">Add Movie</a></li>';
                 echo '<li><a href="sort-list.php">Sort Movies</a></li>';
                 echo '<li><a href="logout.php" class= "logout-button">Log Out</a></li>';
                 echo '<li><a href="CRUDcategory.php">Edit Categories</a></li>';
+                echo '<li><a href="recommend.php">Find me a movie</a></li>';
             } else {
                 echo '<li><a href="register.php">Make Account</a></li>';
                 echo '<li><a href="login.php">Login</a></li>';
+                echo '<li><a href="recommend.php">Find me a movie</a></li>';
             }
             ?>
         </ul>
@@ -150,23 +160,24 @@ $categoryResult = $conn->query($categorySql);
                 while ($row = $result->fetch_assoc()) {
                     $movieId = $row["MovieID"];
                     $title = $row["Title"];
-                    $poster = $row["Movie_Poster"];
-            ?>
-            <div class="movie">
-                <h2><a href='show.php?id=<?= $movieId ?>'><?= $title ?></a></h2>
-                <?php
-if (!empty($poster)) {
-    echo '<img src="data:image/jpeg;base64,' . base64_encode($poster) . '" alt="Movie Poster" width="200">';
-}
-?>
-
-                <?php
-                if (isLoggedIn() || isAdminLoggedIn()) {
-                    echo '<a href="edit.php?id=' . $movieId . '" class="edit-button">edit</a>';
-                }
+                    $poster = $row["Movie_Poster"]; 
+                    $slug = generateSlug($title);
                 ?>
-            </div>
-            <?php
+                <div class="movie">
+                    <h2><a href='<?= "show.php?id=$movieId/$slug" ?>'><?= $title ?></a></h2>
+                    <?php
+                    if (!empty($poster)) {
+                        echo '<img src="data:image/jpeg;base64,' . base64_encode($poster) . '" alt="Movie Poster" width="200">';
+                    }
+                    ?>
+                
+                    <?php
+                    if (isLoggedIn() || isAdminLoggedIn()) {
+                        echo '<a href="edit.php?id=' . $movieId . '" class="edit-button">edit</a>';
+                    }
+                    ?>
+                </div>
+                <?php
                 }
             }
             ?>
