@@ -3,6 +3,30 @@
 session_start();
 require('authenticate.php');
 
+function convertSpacesToDashes($text) {
+    return str_replace(' ', '-', $text);
+}
+
+// Function to validate and extract ID and slug from the URL
+function validateAndGetIdAndSlug() {
+    $requestUrl = $_SERVER['REQUEST_URI'];
+    $pattern = '/^\/page\/(\d+)\/([a-z0-9-]+)\/$/';
+
+    if (preg_match($pattern, $requestUrl, $matches)) {
+        $id = $matches[1];
+        $slug = $matches[2];
+
+        // Check if the ID or slug text has been changed
+        // If changed, handle accordingly (e.g., redirect to an error page)
+        // For simplicity, we will just return the values here
+        return ['id' => $id, 'slug' => $slug];
+    } else {
+        // Redirect to an error page for invalid URLs
+        header("Location: /error-page");
+        exit;
+    }
+}
+
 
 function displayComments($conn, $movieId)
 {

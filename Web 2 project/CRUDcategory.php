@@ -2,40 +2,57 @@
 
 require('authenticate.php');
 
+$servername = "localhost";
+$username = "serveruser";
+$password = "gorgonzola7!";
+$dbname = "serverside";
 
-$servername = "localhost"; // Replace with your database server
-$username = "serveruser"; // Replace with your database username
-$password = "gorgonzola7!"; // Replace with your database password
-$dbname = "serverside"; // Replace with your database name
-
-// Create a database connection
 $conn = new mysqli($servername, $username, $password, $dbname);
 
-// Check connection
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-if (isset($_POST['viewCategory'])) {
-    $selectedCategoryId = $_POST['viewCategory'];
+// Add this block to check if the category already exists before processing the form
+if (isset($_POST['newCategory'])) {
+    $newCategory = trim(filter_input(INPUT_POST, 'newCategory', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
 
-    // Fetch category details from the database
-    $categoryDetailsSql = "SELECT * FROM categories WHERE category_id = ?";
-    $categoryDetailsStmt = $conn->prepare($categoryDetailsSql);
-    $categoryDetailsStmt->bind_param("i", $selectedCategoryId);
-    $categoryDetailsStmt->execute();
-    $categoryDetailsResult = $categoryDetailsStmt->get_result();
+    // Check if the category name is not empty
+    if (!empty($newCategory)) {
+        // Check if a category with the same name (case-insensitive) already exists
+        $checkCategorySql = "SELECT category_id FROM categories WHERE LOWER(category_name) = LOWER(?)";
+        $checkCategoryStmt = $conn->prepare($checkCategorySql);
+        $checkCategoryStmt->bind_param("s", $newCategory);
+        $checkCategoryStmt->execute();
+        $checkCategoryStmt->store_result();
 
-    if ($categoryDetailsResult->num_rows > 0) {
-        $categoryDetailsRow = $categoryDetailsResult->fetch_assoc();
-        echo "<h3>Category Details</h3>";
-        echo "<p>Category ID: " . $categoryDetailsRow['category_id'] . "</p>";
-        echo "<p>Category Name: " . $categoryDetailsRow['category_name'] . "</p>";
+        if ($checkCategoryStmt->num_rows > 0) {
+            // Category already exists, show a custom error message
+            echo "<p>Error: This category already exists.</p>";
+        } else {
+            // Continue with the form processing logic
+            $insertCategorySql = "INSERT INTO categories (category_name) VALUES (?)";
+            $insertCategoryStmt = $conn->prepare($insertCategorySql);
+            $insertCategoryStmt->bind_param("s", $newCategory);
+
+            if ($insertCategoryStmt->execute()) {
+                echo "<p>Category added successfully!</p>";
+            } else {
+                // Check for unique constraint violation
+                $errorMessage = $conn->error;
+                if (strpos($errorMessage, 'Duplicate entry') !== false) {
+                    echo "<p>Error: This category already exists.</p>";
+                } else {
+                    echo "<p>Error adding category: " . $errorMessage . "</p>";
+                    echo "<p>SQL: $insertCategorySql</p>";
+                    echo "<p>Category: $newCategory</p>";
+                }
+            }
+        }
     } else {
-        echo "<p>No category found for the selected ID.</p>";
+        echo "<p>Error: Category name cannot be empty.</p>";
     }
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -51,7 +68,6 @@ if (isset($_POST['viewCategory'])) {
 <body>
     <nav>
         <div>
-
             <!-- Search bar -->
             <form action="search.php" method="GET">
                 <input type="text" name="q" placeholder="Search movies...">
@@ -62,32 +78,36 @@ if (isset($_POST['viewCategory'])) {
     <h1>Manage Categories</h1>
     <ul>
         <?php
-      if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'user_management.php') !== false) {
-        echo '<li><a href="user_management.php">Go back to manage users</a></li>';
-    }
-            ?>
+        if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'user_management.php') !== false) {
+            echo '<li><a href="user_management.php">Go back to manage users</a></li>';
+        }
+        ?>
         <li><a href="index.php">Home</a></li>
     </ul>
     <!-- Form for creating a new category -->
     <h2>Add New Category</h2>
-    <form action="process_category.php" method="post">
+    <?php
+    if (isset($_GET['error']) && $_GET['error'] === 'categoryExists') {
+        echo "<p>Error: Category already exists.</p>";
+    }
+    ?>
+    <form action="CRUDcategory.php" method="post">
         <label for="newCategory">Category Name:</label>
         <input type="text" id="newCategory" name="newCategory" required>
         <button type="submit">Add Category</button>
-        <?php
-        if (isset($_GET['success']) && $_GET['success'] === 'newCategory') {
-            echo "<p>Category added successfully!</p>";
-        }
-        ?>
     </form>
 
     <!-- Form for updating existing categories -->
-    <!-- Form for updating existing categories -->
     <h2>Update Existing Categories</h2>
+    <?php
+    if (isset($_GET['error']) && $_GET['error'] === 'updatedCategoryExists') {
+        echo "<p>Error: Updated category name already exists.</p>";
+    }
+    ?>
     <form action="process_category.php" method="post">
         <label for="existingCategory">Select Category to Update:</label>
         <select id="existingCategory" name="existingCategory" required>
-            <option value="" disabled selected>Select Category</option> <!-- Add this line -->
+            <option value="" disabled selected>Select Category</option>
             <?php
         // Fetch categories from the database and populate the dropdown
         $sql = "SELECT * FROM categories";
@@ -102,11 +122,6 @@ if (isset($_POST['viewCategory'])) {
         <label for="updatedCategory">New Category Name:</label>
         <input type="text" id="updatedCategory" name="updatedCategory" required>
         <button type="submit">Update Category</button>
-        <?php
-    if (isset($_GET['success']) && $_GET['success'] === 'updatedCategory') {
-        echo "<p>Category updated successfully!</p>";
-    }
-    ?>
     </form>
 
     <!-- Form for deleting a category -->
@@ -114,7 +129,7 @@ if (isset($_POST['viewCategory'])) {
     <form action="process_category.php" method="post">
         <label for="deleteCategory">Select Category to Delete:</label>
         <select id="deleteCategory" name="deleteCategory" required>
-            <option value="" disabled selected>Select Category</option> <!-- Add this line -->
+            <option value="" disabled selected>Select Category</option>
             <?php
         // Fetch categories from the database and populate the dropdown for deletion
         $sql = "SELECT * FROM categories";
@@ -127,11 +142,6 @@ if (isset($_POST['viewCategory'])) {
         ?>
         </select>
         <button type="submit" name="delete">Delete Category</button>
-        <?php
-    if (isset($_GET['success']) && $_GET['success'] === 'deleteCategory') {
-        echo "<p>Category deleted successfully!</p>";
-    }
-    ?>
     </form>
 
     <!-- Form for viewing category details -->
@@ -139,7 +149,7 @@ if (isset($_POST['viewCategory'])) {
     <form action="index.php" method="post">
         <label for="viewCategory">Select Category to View:</label>
         <select id="viewCategory" name="viewCategory">
-            <option value="" disabled selected>Select Category</option> <!-- Add this line -->
+            <option value="" disabled selected>Select Category</option>
             <?php
         // Fetch categories from the database and populate the dropdown for viewing
         $sql = "SELECT * FROM categories";
@@ -151,10 +161,9 @@ if (isset($_POST['viewCategory'])) {
         }
         ?>
         </select>
-        <button type="submit">View Category Details</button>
     </form>
 
-
 </body>
+
 
 </html>

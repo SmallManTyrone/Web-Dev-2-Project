@@ -15,23 +15,30 @@ if (isAdminLoggedIn()) {
 $error_message = ''; // Initialize the error message
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
+    // Sanitize the username using FILTER_SANITIZE_FULL_SPECIAL_CHARS
     $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     $password = $_POST['password'];
 
-    // Try authenticating as an admin
-    if (authenticateAdmin($db, $username, $password)) {
-        header("Location: index.php"); // Redirect to admin dashboard
-        exit();
-    }
+    // Validation: Check if the username is not empty
+    if (empty($username)) {
+        $error_message = "Username is required.";
+    } else {
+        // Try authenticating as an admin
+        if (authenticateAdmin($db, $username, $password)) {
+            header("Location: index.php"); // Redirect to admin dashboard
+            exit();
+        }
 
-    // If admin authentication fails, try authenticating as a regular user
-    if (authenticateUser($db, $username, $password)) {
-        header("Location: index.php"); // Redirect to user dashboard
-        exit();
-    }
+        // If admin authentication fails, try authenticating as a regular user
+        if (authenticateUser($db, $username, $password)) {
+            header("Location: index.php"); // Redirect to user dashboard
+            exit();
+        }
 
-    $error_message = "Login failed. Check your credentials.";
+        $error_message = "Login failed. Check your credentials.";
+    }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -50,13 +57,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
 <h1>Login</h1>
 <div class="login-box">
     <?php
-    if (isset($_GET['error'])) {
-        $error_message = urldecode($_GET['error']);
+    if (!empty($error_message)) {
         echo '<div class="error-message">' . $error_message . '</div>';
         echo '<p><a href="register.php">Register</a></p>';
     }
     ?>
-    <form class = "login" action="login_process.php" method="post" onsubmit="showLoginSuccess()">
+    <form class="login" action="login_process.php" method="post" onsubmit="showLoginSuccess()">
         <label for="username">Username:</label>
         <input type="text" id="username" name="username" required>
 

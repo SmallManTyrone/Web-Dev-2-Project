@@ -1,5 +1,4 @@
 <?php
-
 /*
 Name: Tyson La
 Date: September 20th
@@ -19,15 +18,6 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-function generateSlug($title) {
-    $slug = strtolower(str_replace(' ', '-', $title));
-    $slug = preg_replace('/[^a-z0-9-]/', '', $slug); // Remove non-alphanumeric characters
-    return $slug;
-}
-
-
-
-
 $sql = "SELECT movie.*, GROUP_CONCAT(genre.name SEPARATOR ', ') AS genre_list
         FROM movie
         LEFT JOIN movie_genre ON movie.MovieID = movie_genre.movie_id
@@ -36,9 +26,7 @@ $sql = "SELECT movie.*, GROUP_CONCAT(genre.name SEPARATOR ', ') AS genre_list
 
 // Check if a category is selected
 if (isset($_GET['category'])) {
-    $selectedCategory = $_GET['category'];
-    $selectedCategory = $conn->real_escape_string($selectedCategory);
-
+    $selectedCategory = $conn->real_escape_string($_GET['category']);
     $sql = "SELECT movie.*, GROUP_CONCAT(genre.name SEPARATOR ', ') AS genre_list
             FROM movie
             LEFT JOIN movie_genre ON movie.MovieID = movie_genre.movie_id
@@ -53,8 +41,6 @@ $result = $conn->query($sql);
 
 $categorySql = "SELECT category_name FROM categories";
 $categoryResult = $conn->query($categorySql);
-
-
 ?>
 
 <!DOCTYPE html>
@@ -66,29 +52,26 @@ $categoryResult = $conn->query($categorySql);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
     <script src="script.js"></script>
-
     <title>Movies</title>
 </head>
 
 <body>
     <div class="movie-cms-box">
         <?php
-    if (isset($_SESSION['username'])) {
-    $username = $_SESSION['username'];
-
-    if (isset($_SESSION['is_admin']) && $_SESSION['is_admin']) {
-        echo 'Hello, Admin ' . $username;
-    } else {
-        echo 'Hello, User ' . $username;
-    }
-} else {
-    echo 'Hello, Guest';
-}
-?>
+        if (isset($_SESSION['username'])) {
+            $username = $_SESSION['username'];
+            if (isset($_SESSION['is_admin']) && $_SESSION['is_admin']) {
+                echo 'Hello, Admin ' . $username;
+            } else {
+                echo 'Hello, User ' . $username;
+            }
+        } else {
+            echo 'Hello, Guest';
+        }
+        ?>
         <h1>Welcome to Movie CMS</h1>
         <nav>
             <div>
-
                 <!-- Search bar -->
                 <form action="search.php" method="GET">
                     <input type="text" name="q" placeholder="Search movies...">
@@ -103,17 +86,17 @@ $categoryResult = $conn->query($categorySql);
             echo '</div>';
             $_SESSION['login_success'] = false;
         }
-        
-        if (isset($_SESSION['successMessage'])) {
-    // Display the success message
-    echo '<div class="success-message-container" id="successMessageContainer">';
-    echo '<div class="success-message">' . htmlspecialchars($_SESSION['successMessage'], ENT_QUOTES, 'UTF-8') . '</div>';
-    echo '</div>';
 
-    // Clear the success message from the session
-    unset($_SESSION['successMessage']);
-}
-?>
+        if (isset($_SESSION['successMessage'])) {
+            // Display the success message
+            echo '<div class="success-message-container" id="successMessageContainer">';
+            echo '<div class="success-message">' . htmlspecialchars($_SESSION['successMessage'], ENT_QUOTES, 'UTF-8') . '</div>';
+            echo '</div>';
+
+            // Clear the success message from the session
+            unset($_SESSION['successMessage']);
+        }
+        ?>
         <ul class="navigation-menu">
             <li><a href="index.php">Home</a></li>
             <?php
@@ -160,23 +143,22 @@ $categoryResult = $conn->query($categorySql);
                 while ($row = $result->fetch_assoc()) {
                     $movieId = $row["MovieID"];
                     $title = $row["Title"];
-                    $poster = $row["Movie_Poster"]; 
-                    $slug = generateSlug($title);
-                ?>
-                <div class="movie">
-                    <h2><a href='<?= "show.php?id=$movieId/$slug" ?>'><?= $title ?></a></h2>
-                    <?php
-                    if (!empty($poster)) {
-                        echo '<img src="data:image/jpeg;base64,' . base64_encode($poster) . '" alt="Movie Poster" width="200">';
-                    }
+                    $poster = $row["Movie_Poster"];
                     ?>
-                
-                    <?php
-                    if (isLoggedIn() || isAdminLoggedIn()) {
-                        echo '<a href="edit.php?id=' . $movieId . '" class="edit-button">edit</a>';
-                    }
-                    ?>
-                </div>
+                    <div class="movie">
+                        <h2><a href='show.php?id=<?= $movieId ?>'><?= $title ?></a></h2>
+                        <?php
+                        if (!empty($poster)) {
+                            echo '<img src="data:image/jpeg;base64,' . base64_encode($poster) . '" alt="Movie Poster" width="200">';
+                        }
+                        ?>
+
+                        <?php
+                        if (isLoggedIn() || isAdminLoggedIn()) {
+                            echo '<a href="edit.php?id=' . $movieId . '" class="edit-button">edit</a>';
+                        }
+                        ?>
+                    </div>
                 <?php
                 }
             }
