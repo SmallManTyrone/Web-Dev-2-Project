@@ -49,25 +49,25 @@ if (isset($_POST['viewCategory'])) {
 </head>
 
 <body>
-<nav>
-    <div>
+    <nav>
+        <div>
 
-        <!-- Search bar -->
-        <form action="search.php" method="GET">
-            <input type="text" name="q" placeholder="Search movies...">
-            <button type="submit">Search</button>
-        </form>
-    </div>
-</nav>
+            <!-- Search bar -->
+            <form action="search.php" method="GET">
+                <input type="text" name="q" placeholder="Search movies...">
+                <button type="submit">Search</button>
+            </form>
+        </div>
+    </nav>
     <h1>Manage Categories</h1>
     <ul>
-    <?php
+        <?php
       if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'user_management.php') !== false) {
         echo '<li><a href="user_management.php">Go back to manage users</a></li>';
     }
             ?>
-    <li><a href="index.php">Home</a></li>
-        </ul>
+        <li><a href="index.php">Home</a></li>
+    </ul>
     <!-- Form for creating a new category -->
     <h2>Add New Category</h2>
     <form action="process_category.php" method="post">
@@ -82,29 +82,31 @@ if (isset($_POST['viewCategory'])) {
     </form>
 
     <!-- Form for updating existing categories -->
+    <!-- Form for updating existing categories -->
     <h2>Update Existing Categories</h2>
     <form action="process_category.php" method="post">
         <label for="existingCategory">Select Category to Update:</label>
         <select id="existingCategory" name="existingCategory" required>
+            <option value="" disabled selected>Select Category</option> <!-- Add this line -->
             <?php
-            // Fetch categories from the database and populate the dropdown
-            $sql = "SELECT * FROM categories";
-            $result = $conn->query($sql);
-            if ($result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    echo "<option value='" . $row['category_id'] . "'>" . $row['category_name'] . "</option>";
-                }
+        // Fetch categories from the database and populate the dropdown
+        $sql = "SELECT * FROM categories";
+        $result = $conn->query($sql);
+        if ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                echo "<option value='" . $row['category_id'] . "'>" . $row['category_name'] . "</option>";
             }
-            ?>
+        }
+        ?>
         </select>
         <label for="updatedCategory">New Category Name:</label>
         <input type="text" id="updatedCategory" name="updatedCategory" required>
         <button type="submit">Update Category</button>
         <?php
-        if (isset($_GET['success']) && $_GET['success'] === 'updatedCategory') {
-            echo "<p>Category updated successfully!</p>";
-        }
-        ?>
+    if (isset($_GET['success']) && $_GET['success'] === 'updatedCategory') {
+        echo "<p>Category updated successfully!</p>";
+    }
+    ?>
     </form>
 
     <!-- Form for deleting a category -->
@@ -112,23 +114,24 @@ if (isset($_POST['viewCategory'])) {
     <form action="process_category.php" method="post">
         <label for="deleteCategory">Select Category to Delete:</label>
         <select id="deleteCategory" name="deleteCategory" required>
+            <option value="" disabled selected>Select Category</option> <!-- Add this line -->
             <?php
-            // Fetch categories from the database and populate the dropdown for deletion
-            $sql = "SELECT * FROM categories";
-            $result = $conn->query($sql);
-            if ($result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    echo "<option value='" . $row['category_id'] . "'>" . $row['category_name'] . "</option>";
-                }
+        // Fetch categories from the database and populate the dropdown for deletion
+        $sql = "SELECT * FROM categories";
+        $result = $conn->query($sql);
+        if ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                echo "<option value='" . $row['category_id'] . "'>" . $row['category_name'] . "</option>";
             }
-            ?>
+        }
+        ?>
         </select>
         <button type="submit" name="delete">Delete Category</button>
         <?php
-        if (isset($_GET['success']) && $_GET['success'] === 'deleteCategory') {
-            echo "<p>Category deleted successfully!</p>";
-        }
-        ?>
+    if (isset($_GET['success']) && $_GET['success'] === 'deleteCategory') {
+        echo "<p>Category deleted successfully!</p>";
+    }
+    ?>
     </form>
 
     <!-- Form for viewing category details -->
@@ -136,18 +139,21 @@ if (isset($_POST['viewCategory'])) {
     <form action="index.php" method="post">
         <label for="viewCategory">Select Category to View:</label>
         <select id="viewCategory" name="viewCategory">
+            <option value="" disabled selected>Select Category</option> <!-- Add this line -->
             <?php
-            // Fetch categories from the database and populate the dropdown for viewing
-            $sql = "SELECT * FROM categories";
-            $result = $conn->query($sql);
-            if ($result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    echo "<option value='" . $row['category_id'] . "'>" . $row['category_name'] . "</option>";
-                }
+        // Fetch categories from the database and populate the dropdown for viewing
+        $sql = "SELECT * FROM categories";
+        $result = $conn->query($sql);
+        if ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                echo "<option value='" . $row['category_id'] . "'>" . $row['category_name'] . "</option>";
             }
-            ?>
+        }
+        ?>
         </select>
+        <button type="submit">View Category Details</button>
     </form>
+
 
 </body>
 

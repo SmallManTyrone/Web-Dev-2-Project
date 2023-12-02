@@ -24,40 +24,48 @@ curl_close($curl);
 <html lang="en">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Random Movie</title>
-    <link rel="stylesheet" href="Styles.css">
+    <link rel="stylesheet" href="recommendstyles.css">
 </head>
 
 <body>
-    <h2>Random Movie</h2>
-    <ul>
-        <li><a href="index.php">Home</a></li>
-    </ul>
+    <header>
+        <h2>Random Movie</h2>
+        <nav>
+            <ul>
+                <li><a href="index.php">Home</a></li>
+            </ul>
+        </nav>
+    </header>
 
-    <?php
-    if ($err) {
-        echo "<p>cURL Error #:" . $err . "</p>";
-    } else {
-        $json = json_decode($response, true);
-
-        if (isset($json['total_results']) && $json['total_results'] > 0) {
-            // Movie found
-            $randomIndex = array_rand($json['results']);
-            $title = $json['results'][$randomIndex]['title'];
-            $posterPath = $json['results'][$randomIndex]['poster_path'];
-            $posterUrl = "http://image.tmdb.org/t/p/w500/{$posterPath}";
-
-            echo "<p>Your random movie: <strong>{$title}</strong></p>";
-            echo "<img src=\"{$posterUrl}\" class=\"img-responsive\">";
+    <section class="random-movie-container">
+        <?php
+        if ($err) {
+            echo "<p class='error'>cURL Error #:" . $err . "</p>";
         } else {
-            echo '<div class="alert"><p>We\'re afraid nothing was found for that search.</p></div>';
-            echo "<p>Perhaps you were looking for The Goonies?</p>";
-        }
-    }
-    ?>
+            $json = json_decode($response, true);
 
-    <br>
-    <button onclick="location.reload()">Refresh</button>
+            if (isset($json['total_results']) && $json['total_results'] > 0) {
+                // Movie found
+                $randomIndex = array_rand($json['results']);
+                $title = $json['results'][$randomIndex]['title'];
+                $posterPath = $json['results'][$randomIndex]['poster_path'];
+                $posterUrl = "http://image.tmdb.org/t/p/w500/{$posterPath}";
+
+                echo "<img src=\"{$posterUrl}\" alt=\"Movie Poster\" class=\"movie-poster\">";
+                echo "<div class='random-movie-info'>";
+                echo "<p class='movie-title'>Your random movie: <strong>{$title}</strong></p>";
+                echo "<button class='refresh-button' onclick='location.reload()'>Refresh</button>";
+                echo "</div>";
+            } else {
+                echo '<div class="alert"><p>We\'re afraid nothing was found for that search.</p></div>';
+                echo "<p>Perhaps you were looking for The Goonies?</p>";
+            }
+        }
+        ?>
+    </section>
 </body>
 
 </html>

@@ -216,7 +216,7 @@ $conn->close();
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <title>Management</title>
@@ -266,7 +266,7 @@ $conn->close();
     <h3>Add Category</h3>
     <form action="user_management.php" method="post">
         <label for="category_name">Category Name:</label>
-        <input type="text" name="category_name" required>
+        <input type="text" name="category_name" id="category_name" required>
         <button type="submit" name="create_category">Create Category</button>
     </form>
 
@@ -274,11 +274,12 @@ $conn->close();
     <h3>Edit Category</h3>
     <form action="user_management.php" method="post">
         <label for="category_id">Category ID:</label>
-        <input type="text" name="category_id" required>
+        <input type="text" name="category_id" id="category_id" required>
         <label for="new_category_name">New Category Name:</label>
-        <input type="text" name="new_category_name" required>
+        <input type="text" name="new_category_name" id="new_category_name" required>
         <button type="submit" name="update_category">Update Category</button>
     </form>
+
 
     <!-- Display Categories -->
     <h3>Categories</h3>
@@ -316,7 +317,7 @@ $conn->close();
         <?php } ?>
     </div>
 
-    
+
     <!-- Display Comments -->
     <h3>Comments</h3>
     <table>
@@ -330,7 +331,7 @@ $conn->close();
             <th>Actions</th>
         </tr>
         <?php foreach ($comments as $comment) { ?>
-            <tr>
+        <tr>
             <td><?php echo $comment['id']; ?></td>
             <td><?php echo $comment['name'] ? $comment['name'] : 'Anonymous'; ?></td>
             <td><?php echo $comment['comment']; ?></td>
@@ -339,7 +340,7 @@ $conn->close();
             <td><?php echo $comment['moderation_status']; ?></td>
             <td>
                 <a href="user_management.php?delete_comment=<?php echo $comment['id']; ?>"
-                   onclick="return confirm('Are you sure you want to delete this comment?')">Delete</a>
+                    onclick="return confirm('Are you sure you want to delete this comment?')">Delete</a>
                 <a href="user_management.php?toggle_moderation=<?php echo $comment['id']; ?>">
                     <?php echo $comment['moderation_status'] === 'approved' ? 'Hide' : 'Approve'; ?>
                 </a>

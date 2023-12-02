@@ -210,6 +210,7 @@ if ($_FILES['movie_poster']['error'] === UPLOAD_ERR_OK) {
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Make A post</title>
     <link rel="stylesheet" href="poststyles.css">
     <script src="https://cdn.ckeditor.com/ckeditor5/40.1.0/classic/ckeditor.js"></script>
 </head>

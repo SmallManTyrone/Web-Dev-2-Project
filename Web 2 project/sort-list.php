@@ -66,7 +66,8 @@ $result = $conn->query($sql);
         </nav>
         <a href='index.php' class='nav-link'>Home</a>
         <div class='sorting-options'>
-            <form method='post' action=''>
+        <form method='post' action='sort-list.php'>
+
                 <label for='sort'>Sort by:</label>
                 <select id='sort' name='sort'>
                     <option value='MovieID' <?php if ($sortColumn == 'MovieID') echo 'selected'; ?>>Movie ID</option>
