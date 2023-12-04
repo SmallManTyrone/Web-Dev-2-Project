@@ -47,31 +47,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $posterExtension = pathinfo($posterFile['name'], PATHINFO_EXTENSION);
 
     if (in_array(strtolower($posterExtension), $allowedExtensions)) {
-        // Proceed with file handling
+        // Read the image data
+        $imageData = file_get_contents($posterFile['tmp_name']);
+
+        // Resize the image using GD
+$maxWidth = 182;
+$maxHeight = 200;
+
+list($originalWidth, $originalHeight) = getimagesizefromstring($imageData);
+
+$newWidth = $maxWidth;
+$newHeight = $maxHeight;
+
+$resizedImage = imagecreatetruecolor($newWidth, $newHeight);
+$originalImage = imagecreatefromstring($imageData);
+
+imagecopyresampled($resizedImage, $originalImage, 0, 0, 0, 0, $newWidth, $newHeight, $originalWidth, $originalHeight);
+
+// Save the resized image data
+ob_start();
+imagejpeg($resizedImage);
+$resizedImageData = ob_get_clean();
+
+// Free up memory
+imagedestroy($resizedImage);
+imagedestroy($originalImage);
     } else {
         // Invalid file extension
         echo "Invalid file extension for movie poster.";
         exit();
     }
 
+    // Proceed with saving the resized image data in the database
     try {
-        // Prepare the movie insertion statement
-        $stmt = $conn->prepare("INSERT INTO movie (category_id, Title, Release_Date, Age_Rating, Description, Language, Runtime, Movie_Poster, Director, Actors) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
-        if (!$stmt) {
-            throw new Exception($conn->error);
-        }
-
-        // Execute the movie insertion statement
-        if ($stmt->execute()) {
-            // Rest of your code...
-        }
-    } catch (Exception $e) {
-        echo "Error: " . $e->getMessage() . "<br>";
-    }
-
-    try {
-        // Prepare the movie insertion statement
+        // Prepare the movie insertion statement with a placeholder for the image data
         $stmt = $conn->prepare("INSERT INTO movie (category_id, Title, Release_Date, Age_Rating, Description, Language, Runtime, Movie_Poster, Director, Actors) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
         if (!$stmt) {
@@ -79,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Bind parameters for movie insertion
-        $stmt->bind_param("isssssssss", $category, $title, $releaseDate, $ageRating, $description, $language, $runtime, $resizedImageContents, $director, $actors);
+        $stmt->bind_param("isssssssss", $category, $title, $releaseDate, $ageRating, $description, $language, $runtime, $resizedImageData, $director, $actors);
 
         // Execute the movie insertion statement
         if ($stmt->execute()) {
@@ -164,7 +173,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['successMessage'] = $successMessage;
 
                 // Redirect to index.php
-                header("Location: post.php");
+                header("Location: index.php");
                 exit();
             }
         }
@@ -173,6 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -248,7 +258,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="text" id="actors" name="actors" required>
 
             <label for="genres">Genres:</label>
-            <input type="text" id="genres" name="genres" placeholder="Enter genres (e.g., Action, Comedy, Drama)" required>
+            <input type="text" id="genres" name="genres" placeholder="Enter genres (e.g., Action, Comedy, Drama)"
+                required>
 
             <label for="movie_poster">Movie Poster:</label>
             <input type="file" id="movie_poster" name="movie_poster">

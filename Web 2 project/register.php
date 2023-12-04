@@ -75,12 +75,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
         <br>
         <label for="password">Password:</label>
         <input type="password" name="password" id="password" required>
+        <!-- Password visibility toggle -->
+        <div id="password-toggle" onclick="togglePasswordVisibility('password')">
+            <img src="eye-open.png" alt="Toggle Password Visibility" width="20" height="20">
+        </div>
         <br>
         <label for="confirm_password">Confirm Password:</label>
         <input type="password" name="confirm_password" id="confirm_password" required>
+        <!-- Confirm Password visibility toggle -->
+        <div id="confirm-password-toggle" onclick="togglePasswordVisibility('confirm_password')">
+            <img src="eye-open.png" alt="Toggle Confirm Password Visibility" width="20" height="20">
+        </div>
         <br>
         <input type="submit" name="register" value="Register">
     </form>
+
+    <script>
+        function togglePasswordVisibility(inputId) {
+            var passwordInput = document.getElementById(inputId);
+            var passwordToggle = document.getElementById("password-toggle");
+            var confirmToggle = document.getElementById("confirm-password-toggle");
+
+            // Toggle the type attribute of the password input
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                passwordToggle.innerHTML = '<img src="eye-closed.png" alt="Toggle Password Visibility" width="20" height="20">';
+                if (inputId === "confirm_password") {
+                    confirmToggle.innerHTML = '<img src="eye-closed.png" alt="Toggle Confirm Password Visibility" width="20" height="20">';
+                }
+            } else {
+                passwordInput.type = "password";
+                passwordToggle.innerHTML = '<img src="eye-open.png" alt="Toggle Password Visibility" width="20" height="20">';
+                if (inputId === "confirm_password") {
+                    confirmToggle.innerHTML = '<img src="eye-open.png" alt="Toggle Confirm Password Visibility" width="20" height="20">';
+                }
+            }
+        }
+    </script>
 </body>
 
 </html>

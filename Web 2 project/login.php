@@ -68,9 +68,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
 
         <label for="password">Password:</label>
         <input type="password" id="password" name="password" required>
+        <!-- Password visibility toggle -->
+        <div id="password-toggle" onclick="togglePasswordVisibility()">
+            <img src="eye-open.png" alt="Toggle Password Visibility" width="20" height="20">
+        </div>
 
         <button class="login-button" type="submit" name="login">Login</button>
     </form>
 </div>
+
+<script>
+    function togglePasswordVisibility() {
+        var passwordInput = document.getElementById("password");
+        var passwordToggle = document.getElementById("password-toggle");
+
+        // Toggle the type attribute of the password input
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            passwordToggle.innerHTML = '<img src="eye-closed.png" alt="Toggle Password Visibility" width="20" height="20">';
+        } else {
+            passwordInput.type = "password";
+            passwordToggle.innerHTML = '<img src="eye-open.png" alt="Toggle Password Visibility" width="20" height="20">';
+        }
+    }
+</script>
+
 </body>
 </html>
