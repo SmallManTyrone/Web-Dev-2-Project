@@ -74,7 +74,6 @@ if (isset($_POST['create_user'])) {
         <input type="password" name="confirm_password" placeholder="Confirm Password" required><br>
         <button type="submit" name="create_user">Create User</button>
     </form>
-    <a href="user-management.php">Back to User Management</a>
 </body>
 
 </html>

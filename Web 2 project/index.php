@@ -69,7 +69,7 @@ $categoryResult = $conn->query($categorySql);
             echo 'Hello, Guest';
         }
         ?>
-        <h1>Welcome to Movie CMS</h1>
+        <h1>Tyson's Movie CMS</h1>
         <nav>
             <div>
                 <!-- Search bar -->

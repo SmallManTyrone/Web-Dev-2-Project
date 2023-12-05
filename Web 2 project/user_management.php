@@ -220,7 +220,7 @@ $conn->close();
 
 <head>
     <title>Management</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="Styles.css">
 </head>
 
 <body>
@@ -234,12 +234,11 @@ $conn->close();
                 <button type="submit">Search</button>
             </form>
         </div>
-    </nav>
-
-    <!-- Navigation Links -->
-    <a href="index.php" class="nav-link">Home</a>
+        <a href="index.php" class="nav-link">Home</a>
     <a href="create-user.php" class="nav-link">Create User</a>
     <a href="post.php" class="nav-link">Go to Post</a>
+    </nav>
+
 
     <!-- Display Users -->
     <h3>Users</h3>
@@ -255,7 +254,7 @@ $conn->close();
             <td><?php echo $row['email']; ?></td>
             <td>
                 <a href="edit-user.php?user_id=<?php echo $row['UserID']; ?>">Edit</a>
-                <a href="user-management.php?delete_user=<?php echo $row['UserID']; ?>"
+                <a href="user_management.php?delete_user=<?php echo $row['UserID']; ?>"
                     onclick="return confirm('Are you sure?')">Delete</a>
             </td>
         </tr>

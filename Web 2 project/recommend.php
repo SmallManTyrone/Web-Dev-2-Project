@@ -53,12 +53,13 @@ curl_close($curl);
                 $title = $json['results'][$randomIndex]['title'];
                 $posterPath = $json['results'][$randomIndex]['poster_path'];
                 $posterUrl = "http://image.tmdb.org/t/p/w500/{$posterPath}";
-
-                echo "<img src=\"{$posterUrl}\" alt=\"Movie Poster\" class=\"movie-poster\">";
+                
                 echo "<div class='random-movie-info'>";
                 echo "<p class='movie-title'>Your random movie: <strong>{$title}</strong></p>";
                 echo "<button class='refresh-button' onclick='location.reload()'>Refresh</button>";
                 echo "</div>";
+                echo "<img src=\"{$posterUrl}\" alt=\"Movie Poster\" class=\"movie-poster\">";
+    
             } else {
                 echo '<div class="alert"><p>We\'re afraid nothing was found for that search.</p></div>';
                 echo "<p>Perhaps you were looking for The Goonies?</p>";

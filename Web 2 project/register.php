@@ -53,9 +53,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
 <head>
     <title>Registration</title>
     <link rel="stylesheet" href="Styles.css">
+    <script src="togglevis.js"></script>
 </head>
 
 <body>
+<div class="login-box">
     <h2>Register</h2>
     <ul>
         <li><a href="index.php">Home</a></li>
@@ -65,53 +67,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
         echo '<p style="color: red;">' . $error_message . '</p>';
     }
     ?>
-    <form method="post" action="register.php">
+    <form method="post" action="register.php" class="form">
+        <!-- Apply class "input" to the input elements -->
         <label for="username">Username:</label>
-        <input type="text" name="username" id="username" required
-            value="<?= htmlspecialchars($submittedUsername); ?>" placeholder="Enter your username">
+        <input type="text" name="username" id="username" required value="<?= htmlspecialchars($submittedUsername); ?>" placeholder="Enter your username" class="input">
         <br>
         <label for="email">Email:</label>
-        <input type="email" name="email" id="email" required value="<?php echo isset($email) ? $email : ''; ?>" placeholder="Enter your email">
+        <input type="email" name="email" id="email" required value="<?php echo isset($email) ? $email : ''; ?>" placeholder="Enter your email" class="input">
         <br>
         <label for="password">Password:</label>
-        <input type="password" name="password" id="password" required>
+        <input type="password" name="password" id="password" required class="input">
         <!-- Password visibility toggle -->
         <div id="password-toggle" onclick="togglePasswordVisibility('password')">
             <img src="eye-open.png" alt="Toggle Password Visibility" width="20" height="20">
         </div>
         <br>
         <label for="confirm_password">Confirm Password:</label>
-        <input type="password" name="confirm_password" id="confirm_password" required>
+        <input type="password" name="confirm_password" id="confirm_password" required class="input">
         <!-- Confirm Password visibility toggle -->
-        <div id="confirm-password-toggle" onclick="togglePasswordVisibility('confirm_password')">
+        <div id="confirm_password-toggle" onclick="togglePasswordVisibility('confirm_password')">
             <img src="eye-open.png" alt="Toggle Confirm Password Visibility" width="20" height="20">
         </div>
         <br>
-        <input type="submit" name="register" value="Register">
+        <!-- Apply class "input" to the submit button -->
+        <input type="submit" name="register" value="Register" class="input">
     </form>
+</div>
 
-    <script>
-        function togglePasswordVisibility(inputId) {
-            var passwordInput = document.getElementById(inputId);
-            var passwordToggle = document.getElementById("password-toggle");
-            var confirmToggle = document.getElementById("confirm-password-toggle");
-
-            // Toggle the type attribute of the password input
-            if (passwordInput.type === "password") {
-                passwordInput.type = "text";
-                passwordToggle.innerHTML = '<img src="eye-closed.png" alt="Toggle Password Visibility" width="20" height="20">';
-                if (inputId === "confirm_password") {
-                    confirmToggle.innerHTML = '<img src="eye-closed.png" alt="Toggle Confirm Password Visibility" width="20" height="20">';
-                }
-            } else {
-                passwordInput.type = "password";
-                passwordToggle.innerHTML = '<img src="eye-open.png" alt="Toggle Password Visibility" width="20" height="20">';
-                if (inputId === "confirm_password") {
-                    confirmToggle.innerHTML = '<img src="eye-open.png" alt="Toggle Confirm Password Visibility" width="20" height="20">';
-                }
-            }
-        }
-    </script>
 </body>
 
 </html>

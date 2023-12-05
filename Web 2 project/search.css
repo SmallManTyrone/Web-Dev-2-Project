@@ -1,0 +1,102 @@
+/* Body Styles */
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f4f4f4;
+}
+
+/* Header Styles */
+h2 {
+    color: #333;
+}
+
+/* Search Form Styles */
+form {
+    margin-top: 20px;
+}
+
+form input[type="text"],
+form select,
+form button {
+    padding: 10px;
+    margin-right: 10px;
+}
+
+form input[type="text"] {
+    width: 300px;
+}
+
+form select {
+    width: 150px;
+}
+
+form button {
+    background-color: #3498db;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+form button:hover {
+    background-color: #1e87d8;
+}
+
+/* Results List Styles */
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+ul li {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+    padding: 10px;
+}
+
+ul li a {
+    color: #333;
+    text-decoration: none;
+}
+
+ul li a:hover {
+    text-decoration: underline;
+}
+
+/* Pagination Styles */
+.pagination {
+    margin-top: 20px;
+}
+
+.pagination a {
+    display: inline-block;
+    padding: 5px 10px;
+    margin-right: 5px;
+    text-decoration: none;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+.pagination a:hover {
+    background-color: #3498db;
+    color: #fff;
+}
+
+/* Go Back Link Styles */
+a.goBack {
+    display: inline-block;
+    padding: 10px 20px;
+    margin-top: 20px;
+    text-decoration: none;
+    color: #fff;
+    background-color: #3498db;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+a.goBack:hover {
+    background-color: #1e87d8;
+}

@@ -18,7 +18,7 @@ if ($conn->connect_error) {
 $error_message = ''; // Initialize the error message
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
-    $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_STRING);
+    $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     $password = $_POST['password'];
 
     // Check the 'admins' table for admin login

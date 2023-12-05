@@ -233,11 +233,13 @@ if (isset($_GET['id'])) {
 <?php
     } else {
         echo "Movie not found.";
+        header("Location:index.php");
     }
 
     $stmt->close();
 } else {
     echo "Movie ID not provided.";
+    header("Location:index.php");
 }
 ?>
 

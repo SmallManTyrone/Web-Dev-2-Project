@@ -73,7 +73,7 @@ $conn->close();
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="search.css">
     <title>Search Results</title>
 </head>
 
@@ -120,8 +120,9 @@ $conn->close();
         }
         ?>
     </div>
-
-    <a href="index.php">Go back to the home page</a>
+        
+    <a href="index.php" class="goBack">Go back to the home page</a>
+   
 </body>
 
 </html>

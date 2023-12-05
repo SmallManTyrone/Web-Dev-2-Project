@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", function() {
         successMessageContainer.addEventListener("click", function(event) {
             event.stopPropagation();
         });
+
     }
 });
 

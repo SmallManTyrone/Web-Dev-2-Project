@@ -1,21 +1,21 @@
 <?php
 require('authenticate.php');
 
+
 // Check if a user is already logged in
 if (isLoggedIn()) {
-    header("Location: index.php"); // Redirect to user dashboard
+    header("Location: index.php"); 
     exit();
 }
 
 if (isAdminLoggedIn()) {
-    header("Location: index.php"); // Redirect to user dashboard
+    header("Location: user_management.php"); 
     exit();
 }
 
 $error_message = ''; // Initialize the error message
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
-    // Sanitize the username using FILTER_SANITIZE_FULL_SPECIAL_CHARS
     $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     $password = $_POST['password'];
 
@@ -43,55 +43,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
+    <script src="togglevis.js"></script>
+
     <title>Login</title>
 </head>
+
 <body>
-<ul>
-    <li><a href="index.php">Home</a></li>
-</ul>
-<h1>Login</h1>
-<div class="login-box">
-    <?php
-    if (!empty($error_message)) {
-        echo '<div class="error-message">' . $error_message . '</div>';
-        echo '<p><a href="register.php">Register</a></p>';
-    }
+    <ul>
+        <li><a href="index.php">Home</a></li>
+    </ul>
+    <h1>Login</h1>
+    <div class="login-box">
+        <?php
+  if (!empty($error_message)) {
+    echo '<p>' . $error_message . '</p>';
+    echo '<p><a href="register.php">Register</a></p>';
+}
+
     ?>
-    <form class="login" action="login_process.php" method="post" onsubmit="showLoginSuccess()">
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required>
+        <form class="login" action="login_process.php" method="post" onsubmit="showLoginSuccess()">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
 
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required>
-        <!-- Password visibility toggle -->
-        <div id="password-toggle" onclick="togglePasswordVisibility()">
-            <img src="eye-open.png" alt="Toggle Password Visibility" width="20" height="20">
-        </div>
+            <label for="password">Password:</label>
+            <input type="password" name="password" id="password" required class="input">
+            <!-- Password visibility toggle -->
+            <div id="password-toggle" onclick="togglePasswordVisibility('password')">
+                <img src="eye-open.png" alt="Toggle Password Visibility" width="20" height="20">
+            </div>
 
-        <button class="login-button" type="submit" name="login">Login</button>
-    </form>
-</div>
-
-<script>
-    function togglePasswordVisibility() {
-        var passwordInput = document.getElementById("password");
-        var passwordToggle = document.getElementById("password-toggle");
-
-        // Toggle the type attribute of the password input
-        if (passwordInput.type === "password") {
-            passwordInput.type = "text";
-            passwordToggle.innerHTML = '<img src="eye-closed.png" alt="Toggle Password Visibility" width="20" height="20">';
-        } else {
-            passwordInput.type = "password";
-            passwordToggle.innerHTML = '<img src="eye-open.png" alt="Toggle Password Visibility" width="20" height="20">';
-        }
-    }
-</script>
+            <button class="login-button" type="submit" name="login">Login</button>
+        </form>
+    </div>
 
 </body>
+
 </html>

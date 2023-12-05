@@ -1,7 +1,7 @@
 <?php
 /*
 Name: Tyson La
-Date: September 20, 2023
+Date: Novemeber, 2023
 Description: Movie Listing Page
 */
 
@@ -34,6 +34,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $director = filter_input(INPUT_POST, 'director', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     $actors = filter_input(INPUT_POST, 'actors', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
+    $prevTitle = $_POST['title'] ?? '';
+    $prevReleaseDate = $_POST['release_date'] ?? '';
+    $prevAgeRating = $_POST['age_rating'] ?? '';
+    $prevDescription = $_POST['description'] ?? '';
+    $prevLanguage = $_POST['language'] ?? '';
+    $prevRuntime = $_POST['runtime'] ?? '';
+    $prevDirector = $_POST['director'] ?? '';
+    $prevActors = $_POST['actors'] ?? '';
+    $prevGenres = $_POST['genres'] ?? '';
+
+
     // Validate and sanitize category ID
     $category = filter_input(INPUT_POST, 'category', FILTER_VALIDATE_INT);
 
@@ -41,140 +52,144 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $genresInput = $_POST['genres'];
     $genresArray = array_map('trim', explode(',', $genresInput));
 
-    // Validate and sanitize file input for movie poster
-    $posterFile = $_FILES['movie_poster'];
-    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-    $posterExtension = pathinfo($posterFile['name'], PATHINFO_EXTENSION);
+   // Validate and sanitize file input for movie poster
+$posterFile = $_FILES['movie_poster'];
+$allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+$posterExtension = pathinfo($posterFile['name'], PATHINFO_EXTENSION);
 
-    if (in_array(strtolower($posterExtension), $allowedExtensions)) {
-        // Read the image data
-        $imageData = file_get_contents($posterFile['tmp_name']);
+$isValidFile = true; // Initialize flag
 
-        // Resize the image using GD
-$maxWidth = 182;
-$maxHeight = 200;
+if (in_array(strtolower($posterExtension), $allowedExtensions)) {
+    // Read the image data
+    $imageData = file_get_contents($posterFile['tmp_name']);
 
-list($originalWidth, $originalHeight) = getimagesizefromstring($imageData);
+    // Resize the image using GD
+    $maxWidth = 182;
+    $maxHeight = 200;
 
-$newWidth = $maxWidth;
-$newHeight = $maxHeight;
+    list($originalWidth, $originalHeight) = getimagesizefromstring($imageData);
 
-$resizedImage = imagecreatetruecolor($newWidth, $newHeight);
-$originalImage = imagecreatefromstring($imageData);
+    $newWidth = $maxWidth;
+    $newHeight = $maxHeight;
 
-imagecopyresampled($resizedImage, $originalImage, 0, 0, 0, 0, $newWidth, $newHeight, $originalWidth, $originalHeight);
+    $resizedImage = imagecreatetruecolor($newWidth, $newHeight);
+    $originalImage = imagecreatefromstring($imageData);
 
-// Save the resized image data
-ob_start();
-imagejpeg($resizedImage);
-$resizedImageData = ob_get_clean();
+    imagecopyresampled($resizedImage, $originalImage, 0, 0, 0, 0, $newWidth, $newHeight, $originalWidth, $originalHeight);
 
-// Free up memory
-imagedestroy($resizedImage);
-imagedestroy($originalImage);
-    } else {
-        // Invalid file extension
-        echo "Invalid file extension for movie poster.";
-        exit();
-    }
+    // Save the resized image data
+    ob_start();
+    imagejpeg($resizedImage);
+    $resizedImageData = ob_get_clean();
+
+    // Free up memory
+    imagedestroy($resizedImage);
+    imagedestroy($originalImage);
+} else {
+    // Invalid file extension
+    $error_message = "Invalid file extension for movie poster.";
+    $isValidFile = false;
+}
 
     // Proceed with saving the resized image data in the database
     try {
-        // Prepare the movie insertion statement with a placeholder for the image data
-        $stmt = $conn->prepare("INSERT INTO movie (category_id, Title, Release_Date, Age_Rating, Description, Language, Runtime, Movie_Poster, Director, Actors) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        if ($isValidFile) { // Check if the file is valid
+            // Prepare the movie insertion statement with a placeholder for the image data
+            $stmt = $conn->prepare("INSERT INTO movie (category_id, Title, Release_Date, Age_Rating, Description, Language, Runtime, Movie_Poster, Director, Actors) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-        if (!$stmt) {
-            throw new Exception($conn->error);
-        }
-
-        // Bind parameters for movie insertion
-        $stmt->bind_param("isssssssss", $category, $title, $releaseDate, $ageRating, $description, $language, $runtime, $resizedImageData, $director, $actors);
-
-        // Execute the movie insertion statement
-        if ($stmt->execute()) {
-            // Movie added successfully
-            $movieId = $stmt->insert_id; // Get the ID of the inserted movie
-            $stmt->close(); // Close the movie insertion statement
-
-            // Insert the category into the movie_category table
-            $categorySql = "INSERT INTO movie_category (movie_id, category_id) VALUES (?, ?)";
-            $categoryStmt = $conn->prepare($categorySql);
-
-            if (!$categoryStmt) {
+            if (!$stmt) {
                 throw new Exception($conn->error);
             }
 
-            // Bind parameters for category insertion
-            $categoryStmt->bind_param("ii", $movieId, $category);
+            // Bind parameters for movie insertion
+            $stmt->bind_param("isssssssss", $category, $title, $releaseDate, $ageRating, $description, $language, $runtime, $resizedImageData, $director, $actors);
 
-            // Execute the category insertion statement
-            if ($categoryStmt->execute()) {
-                // Category added successfully
-                $categoryStmt->close(); // Close the category insertion statement
+            // Execute the movie insertion statement
+            if ($stmt->execute()) {
+                // Movie added successfully
+                $movieId = $stmt->insert_id; // Get the ID of the inserted movie
+                $stmt->close(); // Close the movie insertion statement
 
-                // Process and insert genres into the movie_genre table
-                $genreIds = []; // Initialize an array to store genre IDs
+                // Insert the category into the movie_category table
+                $categorySql = "INSERT INTO movie_category (movie_id, category_id) VALUES (?, ?)";
+                $categoryStmt = $conn->prepare($categorySql);
 
-                foreach ($genresArray as $genre) {
-                    // Sanitize and validate the genre as needed
-                    $genre = trim($genre);
+                if (!$categoryStmt) {
+                    throw new Exception($conn->error);
+                }
 
-                    // Check if the genre already exists in the "genre" table
-                    $genreCheckSql = "SELECT genre_id FROM genre WHERE name = ?";
-                    $genreCheckStmt = $conn->prepare($genreCheckSql);
-                    $genreCheckStmt->bind_param("s", $genre);
-                    $genreCheckStmt->execute();
-                    $genreCheckStmt->store_result();
+                // Bind parameters for category insertion
+                $categoryStmt->bind_param("ii", $movieId, $category);
 
-                    if ($genreCheckStmt->num_rows > 0) {
-                        $genreCheckStmt->bind_result($genreId);
-                        $genreCheckStmt->fetch();
-                        // The genre already exists, use its ID
-                        $genreIds[] = $genreId;
-                    } else {
-                        // Insert the genre into the "genre" table
-                        $genreInsertSql = "INSERT INTO genre (name) VALUES (?)";
-                        $genreInsertStmt = $conn->prepare($genreInsertSql);
-                        $genreInsertStmt->bind_param("s", $genre);
-                        $genreInsertStmt->execute();
+                // Execute the category insertion statement
+                if ($categoryStmt->execute()) {
+                    // Category added successfully
+                    $categoryStmt->close(); // Close the category insertion statement
 
-                        $genreId = $conn->insert_id;
-                        $genreIds[] = $genreId;
+                    // Process and insert genres into the movie_genre table
+                    $genreIds = []; // Initialize an array to store genre IDs
+
+                    foreach ($genresArray as $genre) {
+                        // Sanitize and validate the genre as needed
+                        $genre = trim($genre);
+
+                        // Check if the genre already exists in the "genre" table
+                        $genreCheckSql = "SELECT genre_id FROM genre WHERE name = ?";
+                        $genreCheckStmt = $conn->prepare($genreCheckSql);
+                        $genreCheckStmt->bind_param("s", $genre);
+                        $genreCheckStmt->execute();
+                        $genreCheckStmt->store_result();
+
+                        if ($genreCheckStmt->num_rows > 0) {
+                            $genreCheckStmt->bind_result($genreId);
+                            $genreCheckStmt->fetch();
+                            // The genre already exists, use its ID
+                            $genreIds[] = $genreId;
+                        } else {
+                            // Insert the genre into the "genre" table
+                            $genreInsertSql = "INSERT INTO genre (name) VALUES (?)";
+                            $genreInsertStmt = $conn->prepare($genreInsertSql);
+                            $genreInsertStmt->bind_param("s", $genre);
+                            $genreInsertStmt->execute();
+
+                            $genreId = $conn->insert_id;
+                            $genreIds[] = $genreId;
+                        }
+
+                        // Close the statement for checking and inserting genres
+                        $genreCheckStmt->close();
                     }
 
-                    // Close the statement for checking and inserting genres
-                    $genreCheckStmt->close();
+                    // Insert genres and associate them with the movie in the "movie_genre" junction table
+                    foreach ($genreIds as $genreId) {
+                        $movieGenreSql = "INSERT INTO movie_genre (movie_id, genre_id) VALUES (?, ?)";
+                        $movieGenreStmt = $conn->prepare($movieGenreSql);
+                        $movieGenreStmt->bind_param("ii", $movieId, $genreId);
+                        $movieGenreStmt->execute();
+                        $movieGenreStmt->close();
+                    }
+
+                    // Insert the user-movie relationship into the "user_movie" table
+                    if (isLoggedIn()) {
+                        $userId = $_SESSION['user_id'];
+
+                        $userMovieSql = "INSERT INTO user_movie (userid, movieid) VALUES (?, ?)";
+                        $userMovieStmt = $conn->prepare($userMovieSql);
+                        $userMovieStmt->bind_param("ii", $userId, $movieId);
+                        $userMovieStmt->execute();
+                        $userMovieStmt->close();
+                    }
+
+                    // Set the success message
+                    $successMessage = "Movie successfully added!";
+
+                    // Store the success message in the session
+                    $_SESSION['successMessage'] = $successMessage;
+
+                    // Redirect to index.php
+                    header("Location: index.php");
+                    exit();
                 }
-
-                // Insert genres and associate them with the movie in the "movie_genre" junction table
-                foreach ($genreIds as $genreId) {
-                    $movieGenreSql = "INSERT INTO movie_genre (movie_id, genre_id) VALUES (?, ?)";
-                    $movieGenreStmt = $conn->prepare($movieGenreSql);
-                    $movieGenreStmt->bind_param("ii", $movieId, $genreId);
-                    $movieGenreStmt->execute();
-                    $movieGenreStmt->close();
-                }
-
-                // Insert the user-movie relationship into the "user_movie" table
-                if (isLoggedIn()) {
-                    $userId = $_SESSION['user_id'];
-
-                    $userMovieSql = "INSERT INTO user_movie (userid, movieid) VALUES (?, ?)";
-                    $userMovieStmt = $conn->prepare($userMovieSql);
-                    $userMovieStmt->bind_param("ii", $userId, $movieId);
-                    $userMovieStmt->execute();
-                    $userMovieStmt->close();
-                }
-
-                // Set the success message
-                $successMessage = "Movie successfully added!";
-
-                // Store the success message in the session
-                $_SESSION['successMessage'] = $successMessage;
-
-                // Redirect to index.php
-                header("Location: index.php");
-                exit();
             }
         }
     } catch (Exception $e) {
@@ -182,6 +197,7 @@ imagedestroy($originalImage);
     }
 }
 ?>
+
 
 
 <!DOCTYPE html>
@@ -261,12 +277,32 @@ imagedestroy($originalImage);
             <input type="text" id="genres" name="genres" placeholder="Enter genres (e.g., Action, Comedy, Drama)"
                 required>
 
+            <?php if (!empty($error_message)): ?>
+            <div class="error-message"><?php echo $error_message; ?></div>
+            <?php endif; ?>
+
             <label for="movie_poster">Movie Poster:</label>
             <input type="file" id="movie_poster" name="movie_poster">
 
             <button type="submit">Add Movie</button>
         </form>
     </div>
+
+    <?php
+    // Pre-fill form fields with previously entered values
+    echo '<script>';
+    echo 'document.getElementById("title").value = "' . addslashes($prevTitle) . '";';
+    echo 'document.getElementById("release_date").value = "' . addslashes($prevReleaseDate) . '";';
+    echo 'document.getElementById("age_rating").value = "' . addslashes($prevAgeRating) . '";';
+    echo 'document.getElementById("description").value = "' . addslashes($prevDescription) . '";';
+    echo 'document.getElementById("language").value = "' . addslashes($prevLanguage) . '";';
+    echo 'document.getElementById("runtime").value = "' . addslashes($prevRuntime) . '";';
+    echo 'document.getElementById("director").value = "' . addslashes($prevDirector) . '";';
+    echo 'document.getElementById("actors").value = "' . addslashes($prevActors) . '";';
+    echo 'document.getElementById("genres").value = "' . addslashes($prevGenres) . '";';
+    echo '</script>';
+    ?>
+
 
 </body>
 
