@@ -38,7 +38,7 @@ if (isset($_GET['user_id'])) {
 
             if ($conn->query($sql) === TRUE) {
                 // Redirect back to user management page
-                header("Location: user-management.php");
+                header("Location: user_management.php");
                 exit; // Ensure that no further code is executed after the redirect
             } else {
                 echo "Error updating user: " . $conn->error;

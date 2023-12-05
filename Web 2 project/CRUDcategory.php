@@ -13,47 +13,158 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Add this block to check if the category already exists before processing the form
-if (isset($_POST['newCategory'])) {
-    $newCategory = trim(filter_input(INPUT_POST, 'newCategory', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
 
-    // Check if the category name is not empty
-    if (!empty($newCategory)) {
-        // Check if a category with the same name (case-insensitive) already exists
-        $checkCategorySql = "SELECT category_id FROM categories WHERE LOWER(category_name) = LOWER(?)";
-        $checkCategoryStmt = $conn->prepare($checkCategorySql);
-        $checkCategoryStmt->bind_param("s", $newCategory);
-        $checkCategoryStmt->execute();
-        $checkCategoryStmt->store_result();
+$errors = []; // Initialize an array to store errors
+$count = 0; // Initialize $count as a global variable
 
-        if ($checkCategoryStmt->num_rows > 0) {
-            // Category already exists, show a custom error message
-            echo "<p>Error: This category already exists.</p>";
+function categoryExists($conn, $categoryName, $excludeCategoryId = null)
+{
+    global $errors, $count;
+
+    // Convert category name to lowercase for case-insensitive comparison
+    $lowerCategoryName = strtolower($categoryName);
+
+    $sql = "SELECT COUNT(*) as count FROM categories WHERE LOWER(category_name) = ?";
+
+    // Exclude the current category when updating
+    if ($excludeCategoryId !== null) {
+        $sql .= " AND category_id <> ?";
+    }
+
+    $stmt = $conn->prepare($sql);
+
+    if ($excludeCategoryId !== null) {
+        $stmt->bind_param("si", $lowerCategoryName, $excludeCategoryId);
+    } else {
+        $stmt->bind_param("s", $lowerCategoryName);
+    }
+
+    $stmt->execute();
+    $stmt->bind_result($count);
+    $stmt->fetch();
+    $stmt->close();
+
+    if ($count > 0) {
+        $errors[] = "Error: This category already exists.";
+        return true;
+    }
+
+    return false;
+}
+
+
+
+
+
+
+
+
+function addCategory($conn, $categoryName)
+{
+    // Check if the category already exists
+    $lowerCategoryName = strtolower($categoryName); // Convert to lowercase
+    if (categoryExists($conn, $lowerCategoryName)) {
+        echo "<p>Error: This category already exists.</p>";
+    } else {
+        $insertCategorySql = "INSERT INTO categories (category_name) VALUES (?)";
+        $insertCategoryStmt = $conn->prepare($insertCategorySql);
+        $insertCategoryStmt->bind_param("s", $lowerCategoryName); // Use the lowercase name
+
+        if ($insertCategoryStmt->execute()) {
+            echo "<p>Category added successfully!</p>";
         } else {
-            // Continue with the form processing logic
-            $insertCategorySql = "INSERT INTO categories (category_name) VALUES (?)";
-            $insertCategoryStmt = $conn->prepare($insertCategorySql);
-            $insertCategoryStmt->bind_param("s", $newCategory);
-
-            if ($insertCategoryStmt->execute()) {
-                echo "<p>Category added successfully!</p>";
+            // Check for unique constraint violation
+            $errorMessage = $conn->error;
+            if (strpos($errorMessage, 'Duplicate entry') !== false) {
+                echo "<p>Error: This category already exists.</p>";
             } else {
-                // Check for unique constraint violation
-                $errorMessage = $conn->error;
-                if (strpos($errorMessage, 'Duplicate entry') !== false) {
-                    echo "<p>Error: This category already exists.</p>";
-                } else {
-                    echo "<p>Error adding category: " . $errorMessage . "</p>";
-                    echo "<p>SQL: $insertCategorySql</p>";
-                    echo "<p>Category: $newCategory</p>";
-                }
+                echo "<p>Error adding category: " . $errorMessage . "</p>";
+                echo "<p>SQL: $insertCategorySql</p>";
+                echo "<p>Category: $categoryName</p>";
             }
         }
-    } else {
-        echo "<p>Error: Category name cannot be empty.</p>";
     }
 }
+
+function updateCategory($conn, $categoryId, $updatedCategoryName)
+{
+    // Use a case-insensitive comparison for uniqueness check
+    $lowerUpdatedCategoryName = strtolower($updatedCategoryName);
+
+    if (categoryExists($conn, $lowerUpdatedCategoryName, $categoryId)) {
+        echo "<p>Error: Updated category name already exists. Please choose a different name.</p>";
+    } else {
+        $sql = "UPDATE categories SET category_name = ? WHERE category_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("si", $lowerUpdatedCategoryName, $categoryId); // Use the lowercase name
+
+        if ($stmt->execute()) {
+            echo "<p>Category updated successfully!</p>";
+        } else {
+            echo "Error updating category: " . $stmt->error;
+        }
+    }
+}
+
+
+
+
+// Function to handle deleting an existing category
+function deleteCategory($conn, $categoryId)
+{
+    // Delete associated records in movie_category first
+    $deleteMovieCategorySql = "DELETE FROM movie_category WHERE category_id = ?";
+    $deleteMovieCategoryStmt = $conn->prepare($deleteMovieCategorySql);
+    $deleteMovieCategoryStmt->bind_param("i", $categoryId);
+
+    if ($deleteMovieCategoryStmt->execute()) {
+        // Now delete the category
+        $sql = "DELETE FROM categories WHERE category_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $categoryId);
+
+        if ($stmt->execute()) {
+            echo "<p>Category deleted successfully!</p>";
+        } else {
+            echo "Error deleting category: " . $stmt->error;
+        }
+    } else {
+        echo "Error deleting associated movie_category records: " . $deleteMovieCategoryStmt->error;
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Check the value of the "action" field
+    if (isset($_POST['action'])) {
+        // Add new category
+        if ($_POST['action'] === 'addCategory' && isset($_POST['newCategory'])) {
+            $newCategory = trim(filter_input(INPUT_POST, 'newCategory', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+            if (!empty($newCategory)) {
+                if (!categoryExists($conn, $newCategory)) {
+                    addCategory($conn, $newCategory);
+                }
+            } else {
+                $errors[] = "Error: Category name cannot be empty.";
+            }
+        }
+
+    // Update existing category
+    if (isset($_POST['existingCategory'], $_POST['updatedCategory'])) {
+        updateCategory($conn, $_POST['existingCategory'], $_POST['updatedCategory']);
+    }
+
+    // Delete existing category
+    if (isset($_POST['deleteCategory'])) {
+        deleteCategory($conn, $_POST['deleteCategory']);
+    }
+}
+
+foreach ($errors as $error) {
+    echo "<p>$error</p>";
+}
+} // Add this closing brace
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -61,7 +172,7 @@ if (isset($_POST['newCategory'])) {
 <head>
     <meta charset="UTF-8">
     <title>Manage Categories</title>
-    <link rel="stylesheet" href="poststyles.css">
+    <link rel="stylesheet" href="categoryCRUD.css">
 
 </head>
 
@@ -84,7 +195,6 @@ if (isset($_POST['newCategory'])) {
         ?>
         <li><a href="index.php">Home</a></li>
     </ul>
-    <!-- Form for creating a new category -->
     <h2>Add New Category</h2>
     <?php
     if (isset($_GET['error']) && $_GET['error'] === 'categoryExists') {
@@ -92,10 +202,11 @@ if (isset($_POST['newCategory'])) {
     }
     ?>
     <form action="CRUDcategory.php" method="post">
-        <label for="newCategory">Category Name:</label>
-        <input type="text" id="newCategory" name="newCategory" required>
-        <button type="submit">Add Category</button>
-    </form>
+    <input type="hidden" name="action" value="addCategory"> <!-- Added hidden input field -->
+    <label for="newCategory">Category Name:</label>
+    <input type="text" id="newCategory" name="newCategory" required>
+    <button type="submit">Add Category</button>
+</form>
 
     <!-- Form for updating existing categories -->
     <h2>Update Existing Categories</h2>
@@ -104,7 +215,8 @@ if (isset($_POST['newCategory'])) {
         echo "<p>Error: Updated category name already exists.</p>";
     }
     ?>
-    <form action="process_category.php" method="post">
+    <form action="CRUDcategory.php" method="post">
+    <input type="hidden" name="action" value="updateCategory"> <!-- Added hidden input field -->
         <label for="existingCategory">Select Category to Update:</label>
         <select id="existingCategory" name="existingCategory" required>
             <option value="" disabled selected>Select Category</option>
@@ -126,7 +238,8 @@ if (isset($_POST['newCategory'])) {
 
     <!-- Form for deleting a category -->
     <h2>Delete Existing Categories</h2>
-    <form action="process_category.php" method="post">
+    <form action="CRUDcategory.php" method="post">
+    <input type="hidden" name="action" value="deleteCategory"> <!-- Added hidden input field -->
         <label for="deleteCategory">Select Category to Delete:</label>
         <select id="deleteCategory" name="deleteCategory" required>
             <option value="" disabled selected>Select Category</option>
@@ -146,7 +259,8 @@ if (isset($_POST['newCategory'])) {
 
     <!-- Form for viewing category details -->
     <h2>View Current Categories</h2>
-    <form action="index.php" method="post">
+    <form action="CRUDcategory.php" method="post">
+    <input type="hidden" name="action" value="viewCategory"> <!-- Added hidden input field -->
         <label for="viewCategory">Select Category to View:</label>
         <select id="viewCategory" name="viewCategory">
             <option value="" disabled selected>Select Category</option>

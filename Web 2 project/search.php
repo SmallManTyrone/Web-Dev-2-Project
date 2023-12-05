@@ -82,7 +82,7 @@ $conn->close();
     <!-- Search form with category dropdown -->
     <form action="search.php" method="GET">
         <input type="text" name="q" placeholder="Search movies..." value="<?= $searchQuery ?>">
-        <select name="category">
+        <select name="category" onchange="this.form.submit()">
             <option value="" <?php if ($category == '') echo 'selected'; ?>>All Categories</option>
             <?php
             while ($categoryRow = $categoryResult->fetch_assoc()) {

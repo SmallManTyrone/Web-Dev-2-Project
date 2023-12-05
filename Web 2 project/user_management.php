@@ -154,21 +154,52 @@ if (isset($_GET['delete_category'])) {
 // Re-fetch categories after deletion
 $categoriesResult = $conn->query("SELECT * FROM categories");
 
+function categoryExists($conn, $categoryName, $excludeCategoryId = null)
+{
+    $sql = "SELECT category_id FROM categories WHERE LOWER(category_name) = LOWER(?)";
+
+    // Exclude the current category when updating
+    if ($excludeCategoryId !== null) {
+        $sql .= " AND category_id <> ?";
+    }
+
+    $stmt = $conn->prepare($sql);
+
+    // Sanitize and handle special characters in the category name
+    $sanitizedCategoryName = filter_var($categoryName, FILTER_SANITIZE_STRING, FILTER_FLAG_NO_ENCODE_QUOTES);
+
+    if ($excludeCategoryId !== null) {
+        $stmt->bind_param("si", $sanitizedCategoryName, $excludeCategoryId);
+    } else {
+        $stmt->bind_param("s", $sanitizedCategoryName);
+    }
+
+    $stmt->execute();
+    $stmt->store_result();
+
+    return $stmt->num_rows > 0;
+}
+
 // Handle form submission to update category
 if (isset($_POST['update_category'])) {
     // Process category update form submission
     $categoryId = $_POST['category_id'];
     $newCategoryName = $_POST['new_category_name'];
 
-    // Update the category
-    $updateSql = "UPDATE categories SET category_name = ? WHERE category_id = ?";
-    $updateStmt = $conn->prepare($updateSql);
-    $updateStmt->bind_param("si", $newCategoryName, $categoryId);
-
-    if ($updateStmt->execute()) {
-        echo "Category updated successfully.";
+    // Check if the updated category name already exists
+    if (categoryExists($conn, $newCategoryName, $categoryId)) {
+        echo "Error: The updated category name already exists.";
     } else {
-        echo "Error updating category: " . $updateStmt->error;
+        // Update the category
+        $updateSql = "UPDATE categories SET category_name = ? WHERE category_id = ?";
+        $updateStmt = $conn->prepare($updateSql);
+        $updateStmt->bind_param("si", $newCategoryName, $categoryId);
+
+        if ($updateStmt->execute()) {
+            echo "Category updated successfully.";
+        } else {
+            echo "Error updating category: " . $updateStmt->error;
+        }
     }
 }
 
