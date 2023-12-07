@@ -216,7 +216,7 @@ foreach ($errors as $error) {
     }
     ?>
     <form action="CRUDcategory.php" method="post">
-    <input type="hidden" name="action" value="updateCategory"> <!-- Added hidden input field -->
+    <input type="hidden" name="action" value="updateCategory"> 
         <label for="existingCategory">Select Category to Update:</label>
         <select id="existingCategory" name="existingCategory" required>
             <option value="" disabled selected>Select Category</option>
@@ -260,7 +260,7 @@ foreach ($errors as $error) {
     <!-- Form for viewing category details -->
     <h2>View Current Categories</h2>
     <form action="CRUDcategory.php" method="post">
-    <input type="hidden" name="action" value="viewCategory"> <!-- Added hidden input field -->
+    <input type="hidden" name="action" value="viewCategory"> 
         <label for="viewCategory">Select Category to View:</label>
         <select id="viewCategory" name="viewCategory">
             <option value="" disabled selected>Select Category</option>

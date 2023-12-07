@@ -22,7 +22,7 @@ $_SESSION['searchQuery'] = $searchQuery;
 $_SESSION['searchCategory'] = $category;
 
 // Pagination settings
-$perPage = 2; // Number of results per page
+$perPage = 4; // Number of results per page
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1; // Current page, default is 1
 $offset = ($page - 1) * $perPage; // Calculate offset for SQL query
 

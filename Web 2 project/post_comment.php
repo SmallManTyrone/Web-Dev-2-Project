@@ -1,29 +1,41 @@
 <?php
-require('authenticate.php'); // Include your authentication logic
+require('authenticate.php'); // authentication logic
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Check if the required fields are set
-    if (isset($_POST['movie_id'], $_POST['name'], $_POST['comment'])) {
-        $movieId = $_POST['movie_id'];
-        $name = $_POST['name'];
-        $commentText = $_POST['comment'];
+    // Validate and sanitize input
+    $movieId = filter_input(INPUT_POST, 'movie_id', FILTER_VALIDATE_INT);
+    $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $commentText = trim($_POST['comment']);
 
-        // Insert the comment into the database
-        $sql = "INSERT INTO comments (movie_id, name, comment, created_at) VALUES (?, ?, ?, NOW())";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("iss", $movieId, $name, $commentText);
+    // Check if the required fields are set and are valid
+    if ($movieId !== false && $name !== false && isset($commentText)) {
+        $commentText = filter_var($commentText, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
-        if ($stmt->execute()) {
-            // Comment added successfully
-            header("Location: show.php?id=$movieId"); // Redirect back to the movie details page
-            exit();
+        if (!empty($commentText)) {
+            // Insert the comment into the database using prepared statements
+            $sql = "INSERT INTO comments (movie_id, name, comment, created_at) VALUES (?, ?, ?, NOW())";
+            $stmt = $conn->prepare($sql);
+
+            if ($stmt) {
+                $stmt->bind_param("iss", $movieId, $name, $commentText);
+
+                if ($stmt->execute()) {
+                    // Comment added successfully
+                    header("Location: show.php?id=$movieId"); // Redirect back to the movie details page
+                    exit();
+                } else {
+                    echo "Error adding comment: " . $stmt->error;
+                }
+
+                $stmt->close();
+            } else {
+                echo "Error preparing statement: " . $conn->error;
+            }
         } else {
-            echo "Error adding comment: " . $stmt->error;
+            echo "Comment must contain non-empty content.";
         }
-
-        $stmt->close();
     } else {
-        echo "Missing required fields.";
+        echo "Invalid or missing required fields.";
     }
 } else {
     echo "Invalid request method.";

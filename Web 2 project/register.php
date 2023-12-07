@@ -1,10 +1,10 @@
 <?php
 require('connect.php'); // Include your database connection script
 
-$servername = "localhost"; // Replace with your database server
-$username = "serveruser"; // Replace with your database username
-$password = "gorgonzola7!"; // Replace with your database password
-$dbname = "serverside"; // Replace with your database name
+$servername = "localhost"; 
+$username = "serveruser"; 
+$password = "gorgonzola7!"; 
+$dbname = "serverside"; 
 
 // Create a database connection
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -23,10 +23,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
     $confirmPassword = $_POST['confirm_password'];
     $email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
 
-    // Check if the username already exists
-    if (isUsernameExists($conn, $username)) {
-        $error_message = "Username already exists. Please choose a different username.";
-    } elseif ($password === $confirmPassword) {
+  // Check if the username already exists
+if (isUsernameExists($conn, $username)) {
+    $error_message = "Username already exists. Please choose a different username.";
+} elseif ($password === $confirmPassword) {
+    // Check if the username contains spaces
+    if (strpos($username, ' ') !== false) {
+        $error_message = "Username should not contain spaces.";
+    } elseif (strpos($password, ' ') !== false) {
+        $error_message = "Password should not contain spaces.";
+    } else {
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
         // Prepare and execute an SQL query to insert data into the 'users' table
@@ -41,9 +47,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
         } else {
             echo "Registration failed: " . $stmt->error;
         }
-    } else {
-        $error_message = "Passwords do not match. Please try again.";
     }
+} else {
+    $error_message = "Passwords do not match. Please try again.";
+}
 }
 ?>
 

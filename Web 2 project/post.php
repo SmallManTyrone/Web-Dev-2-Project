@@ -24,15 +24,16 @@ $error_message = ''; // Initialize the error message
 
 // Handle new movie submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Validate and sanitize form fields
-    $title = filter_input(INPUT_POST, 'title', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $releaseDate = filter_input(INPUT_POST, 'release_date', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $ageRating = filter_input(INPUT_POST, 'age_rating', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $description = filter_input(INPUT_POST, 'description', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $language = filter_input(INPUT_POST, 'language', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $runtime = filter_input(INPUT_POST, 'runtime', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $director = filter_input(INPUT_POST, 'director', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $actors = filter_input(INPUT_POST, 'actors', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+
+
+    $title = trim(filter_input(INPUT_POST, 'title', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+    $releaseDate = trim(filter_input(INPUT_POST, 'release_date', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+    $ageRating = trim(filter_input(INPUT_POST, 'age_rating', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+    $description = trim(filter_input(INPUT_POST, 'description', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+    $language = trim(filter_input(INPUT_POST, 'language', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+    $runtime = trim(filter_input(INPUT_POST, 'runtime', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+    $director = trim(filter_input(INPUT_POST, 'director', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+    $actors = trim(filter_input(INPUT_POST, 'actors', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
 
     $prevTitle = $_POST['title'] ?? '';
     $prevReleaseDate = $_POST['release_date'] ?? '';
@@ -52,49 +53,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $genresInput = $_POST['genres'];
     $genresArray = array_map('trim', explode(',', $genresInput));
 
-   // Validate and sanitize file input for movie poster
-$posterFile = $_FILES['movie_poster'];
-$allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-$posterExtension = pathinfo($posterFile['name'], PATHINFO_EXTENSION);
+    // Validate and sanitize file input for movie poster
+    $posterFile = $_FILES['movie_poster'];
 
-$isValidFile = true; // Initialize flag
+    // Initialize $isValidFile
+    $isValidFile = true;
 
-if (in_array(strtolower($posterExtension), $allowedExtensions)) {
-    // Read the image data
-    $imageData = file_get_contents($posterFile['tmp_name']);
+    // Check if a file has been uploaded
+    if ($posterFile['size'] > 0) {
+    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+    $posterExtension = pathinfo($posterFile['name'], PATHINFO_EXTENSION);
 
-    // Resize the image using GD
-    $maxWidth = 182;
-    $maxHeight = 200;
+    if (in_array(strtolower($posterExtension), $allowedExtensions)) {
+        // Read the image data
+        $imageData = file_get_contents($posterFile['tmp_name']);
 
-    list($originalWidth, $originalHeight) = getimagesizefromstring($imageData);
+        // Resize the image using GD
+        $maxWidth = 250;
+        $maxHeight = 350;
 
-    $newWidth = $maxWidth;
-    $newHeight = $maxHeight;
+        list($originalWidth, $originalHeight) = getimagesizefromstring($imageData);
 
-    $resizedImage = imagecreatetruecolor($newWidth, $newHeight);
-    $originalImage = imagecreatefromstring($imageData);
+        $newWidth = $maxWidth;
+        $newHeight = $maxHeight;
 
-    imagecopyresampled($resizedImage, $originalImage, 0, 0, 0, 0, $newWidth, $newHeight, $originalWidth, $originalHeight);
+        $resizedImage = imagecreatetruecolor($newWidth, $newHeight);
+        $originalImage = imagecreatefromstring($imageData);
 
-    // Save the resized image data
-    ob_start();
-    imagejpeg($resizedImage);
-    $resizedImageData = ob_get_clean();
+        imagecopyresampled($resizedImage, $originalImage, 0, 0, 0, 0, $newWidth, $newHeight, $originalWidth, $originalHeight);
 
-    // Free up memory
-    imagedestroy($resizedImage);
-    imagedestroy($originalImage);
-} else {
-    // Invalid file extension
-    $error_message = "Invalid file extension for movie poster.";
-    $isValidFile = false;
-}
+        // Save the resized image data
+        ob_start();
+        imagejpeg($resizedImage, null, 100);
+        $resizedImageData = ob_get_clean();
+        // Free up memory
+        imagedestroy($resizedImage);
+        imagedestroy($originalImage);
+    } else {
+        // Invalid file extension
+        $error_message = "Invalid file extension for movie poster.";
+        $isValidFile = false;
+     }
+    } else {
+    // No file uploaded, set $isValidFile to true
+    $isValidFile = true;
+    }
 
     // Proceed with saving the resized image data in the database
     try {
         if ($isValidFile) { // Check if the file is valid
-            // Prepare the movie insertion statement with a placeholder for the image data
+           
             $stmt = $conn->prepare("INSERT INTO movie (category_id, Title, Release_Date, Age_Rating, Description, Language, Runtime, Movie_Poster, Director, Actors) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
             if (!$stmt) {
@@ -179,6 +187,33 @@ if (in_array(strtolower($posterExtension), $allowedExtensions)) {
                         $userMovieStmt->execute();
                         $userMovieStmt->close();
                     }
+   // Check for empty fields or invalid file before attempting to insert the movie
+if (
+    trim($title) === '' || trim($releaseDate) === '' || trim($ageRating) === '' || trim($description) === '' ||
+    trim($language) === '' || trim($runtime) === '' || trim($director) === '' || trim($actors) === '' ||
+    trim($genresInput) === '' || empty($posterFile) || !$isValidFile
+) {
+    $error_message = "Please fill in all required fields.";
+} else {
+    // Proceed with saving the resized image data in the database
+    try {
+        // Rest of the code for inserting the movie...
+
+        // Set the success message
+        $successMessage = "Movie successfully added!";
+
+        // Store the success message in the session
+        $_SESSION['successMessage'] = $successMessage;
+
+        // Redirect to index.php
+        header("Location: index.php");
+        exit();
+    } catch (Exception $e) {
+        echo "Error: " . $e->getMessage() . "<br>";
+    }
+}
+
+
 
                     // Set the success message
                     $successMessage = "Movie successfully added!";
@@ -196,6 +231,7 @@ if (in_array(strtolower($posterExtension), $allowedExtensions)) {
         echo "Error: " . $e->getMessage() . "<br>";
     }
 }
+
 ?>
 
 
@@ -250,28 +286,28 @@ if (in_array(strtolower($posterExtension), $allowedExtensions)) {
                 ?>
             </select>
             <label for="title">Title:</label>
-            <input type="text" id="title" name="title" required>
+            <input type="text" id="title" name="title" placeholder="Enter Title" required>
 
             <label for="release_date">Release Date:</label>
             <input type="date" id="release_date" name="release_date" required>
 
             <label for="age_rating">Age Rating:</label>
-            <input type="text" id="age_rating" name="age_rating" required>
+            <input type="text" id="age_rating" name="age_rating" placeholder="Enter Age Rating(e.g R-13,M,R)" required>
 
             <label for="description">Description:</label>
-            <textarea id="description" name="description" required></textarea>
+            <textarea id="description" name="description" placeholder="Enter Description" required></textarea>
 
             <label for="language">Language:</label>
-            <input type="text" id="language" name="language" required>
+            <input type="text" id="language" name="language" placeholder="Enter Movie Language" required>
 
             <label for="runtime">Runtime:</label>
-            <input type="text" id="runtime" name="runtime" required>
+            <input type="text" id="runtime" name="runtime" placeholder="Enter Runtime in Minutes" required>
 
             <label for="director">Director:</label>
-            <input type="text" id="director" name="director" required>
+            <input type="text" id="director" name="director" placeholder="Enter Director(s)" required>
 
             <label for="actors">Actors:</label>
-            <input type="text" id="actors" name="actors" required>
+            <input type="text" id="actors" name="actors" placeholder="Enter Actor(s)" required>
 
             <label for="genres">Genres:</label>
             <input type="text" id="genres" name="genres" placeholder="Enter genres (e.g., Action, Comedy, Drama)"
@@ -289,21 +325,23 @@ if (in_array(strtolower($posterExtension), $allowedExtensions)) {
     </div>
 
     <?php
-    // Pre-fill form fields with previously entered values
-    echo '<script>';
-    echo 'document.getElementById("title").value = "' . addslashes($prevTitle) . '";';
-    echo 'document.getElementById("release_date").value = "' . addslashes($prevReleaseDate) . '";';
-    echo 'document.getElementById("age_rating").value = "' . addslashes($prevAgeRating) . '";';
-    echo 'document.getElementById("description").value = "' . addslashes($prevDescription) . '";';
-    echo 'document.getElementById("language").value = "' . addslashes($prevLanguage) . '";';
-    echo 'document.getElementById("runtime").value = "' . addslashes($prevRuntime) . '";';
-    echo 'document.getElementById("director").value = "' . addslashes($prevDirector) . '";';
-    echo 'document.getElementById("actors").value = "' . addslashes($prevActors) . '";';
-    echo 'document.getElementById("genres").value = "' . addslashes($prevGenres) . '";';
-    echo '</script>';
-    ?>
+// Pre-fill form fields with previously entered values
+echo '<script>';
+echo 'document.getElementById("title").value = "' . (isset($prevTitle) ? addslashes($prevTitle) : '') . '";';
+echo 'document.getElementById("release_date").value = "' . (isset($prevReleaseDate) ? addslashes($prevReleaseDate) : '') . '";';
+echo 'document.getElementById("age_rating").value = "' . (isset($prevAgeRating) ? addslashes($prevAgeRating) : '') . '";';
+echo 'document.getElementById("description").value = "' . (isset($prevDescription) ? addslashes($prevDescription) : '') . '";';
+echo 'document.getElementById("language").value = "' . (isset($prevLanguage) ? addslashes($prevLanguage) : '') . '";';
+echo 'document.getElementById("runtime").value = "' . (isset($prevRuntime) ? addslashes($prevRuntime) : '') . '";';
+echo 'document.getElementById("director").value = "' . (isset($prevDirector) ? addslashes($prevDirector) : '') . '";';
+echo 'document.getElementById("actors").value = "' . (isset($prevActors) ? addslashes($prevActors) : '') . '";';
+echo 'document.getElementById("genres").value = "' . (isset($prevGenres) ? addslashes($prevGenres) : '') . '";';
+echo '</script>';
+?>
 
 
 </body>
+
+
 
 </html>

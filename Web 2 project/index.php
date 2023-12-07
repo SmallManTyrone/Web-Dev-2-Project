@@ -1,7 +1,7 @@
 <?php
 /*
 Name: Tyson La
-Date: September 20th
+Date: Novmeber 2023 
 Description: Movie Listing Page
 */
 
@@ -127,9 +127,18 @@ $categoryResult = $conn->query($categorySql);
 
                 while ($categoryRow = $categoryResult->fetch_assoc()) {
                     $category = $categoryRow['category_name'];
+                    $encodedCategory = urlencode($category);
+                
+                    // Check if the current category matches the one in the URL
                     $selected = (isset($_GET['category']) && $_GET['category'] == $category) ? 'selected' : '';
-                    echo "<option value='index.php?category=$category' $selected>$category</option>";
+                
+                    echo "<option value='index.php?category=$encodedCategory' $selected>$category</option>";
                 }
+                
+                
+                
+                
+                
 
                 echo '</select>';
             }
@@ -145,21 +154,21 @@ $categoryResult = $conn->query($categorySql);
                     $title = $row["Title"];
                     $poster = $row["Movie_Poster"];
                     ?>
-                    <div class="movie">
-                        <h2><a href='show.php?id=<?= $movieId ?>'><?= $title ?></a></h2>
-                        <?php
+            <div class="movie">
+                <h2><a href='show.php?id=<?= $movieId ?>'><?= $title ?></a></h2>
+                <?php
                         if (!empty($poster)) {
                             echo '<img src="data:image/jpeg;base64,' . base64_encode($poster) . '" alt="Movie Poster" width="200">';
                         }
                         ?>
 
-                        <?php
+                <?php
                         if (isLoggedIn() || isAdminLoggedIn()) {
                             echo '<a href="edit.php?id=' . $movieId . '" class="edit-button">edit</a>';
                         }
                         ?>
-                    </div>
-                <?php
+            </div>
+            <?php
                 }
             }
             ?>

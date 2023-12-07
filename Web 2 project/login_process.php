@@ -2,10 +2,10 @@
 session_start();
 require('connect.php'); // Include your database connection script
 
-$servername = "localhost"; // Replace with your database server
-$username = "serveruser"; // Replace with your database username
-$password = "gorgonzola7!"; // Replace with your database password
-$dbname = "serverside"; // Replace with your database name
+$servername = "localhost"; 
+$username = "serveruser";
+$password = "gorgonzola7!";
+$dbname = "serverside"; 
 
 // Create a database connection
 $conn = new mysqli($servername, $username, $password, $dbname);

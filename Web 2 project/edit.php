@@ -1,12 +1,12 @@
 <?php
 require('authenticate.php');
 
-$servername = "localhost"; // Replace with your database server
-$username = "serveruser"; // Replace with your database username
-$password = "gorgonzola7!"; // Replace with your database password
-$dbname = "serverside"; // Replace with your database name
+$servername = "localhost"; 
+$username = "serveruser"; 
+$password = "gorgonzola7!"; 
+$dbname = "serverside"; 
 
-// Create a database connection using PDO
+
 try {
     $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -112,10 +112,10 @@ if (isset($_GET['id']) && isInteger($_GET['id'])) {
 
 
 if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true) {
-    // This block will execute if $_SESSION['is_admin'] is set to true
-    $userIsAdmin = true; // Optionally set a local variable to indicate admin status.
+    
+    $userIsAdmin = true; 
 } else {
-    $userIsAdmin = false; // Optionally set a local variable to indicate non-admin status.
+    $userIsAdmin = false; 
 }
 
 // Check if the currently logged-in user is the owner of the movie post
@@ -172,15 +172,15 @@ $selectedCategoryId = isset($currentCategoryId) ? $currentCategoryId : null;
 // Handle form submission for updating or deleting the movie
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate and sanitize the input as needed
-    $title = filter_input(INPUT_POST, 'title', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $description = filter_input(INPUT_POST, 'description', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $releaseDate = filter_input(INPUT_POST, 'releaseDate', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $ageRating = filter_input(INPUT_POST, 'ageRating', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $language = filter_input(INPUT_POST, 'language', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $runtime = filter_input(INPUT_POST, 'runtime', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $director = filter_input(INPUT_POST, 'director', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $actors = filter_input(INPUT_POST, 'actors', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $selectedCategoryId = filter_input(INPUT_POST, 'category', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $title = trim(filter_input(INPUT_POST, 'title', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+    $description = trim(filter_input(INPUT_POST, 'description', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+    $releaseDate = trim(filter_input(INPUT_POST, 'releaseDate', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+    $ageRating = trim(filter_input(INPUT_POST, 'ageRating', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+    $language = trim(filter_input(INPUT_POST, 'language', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+    $runtime = trim(filter_input(INPUT_POST, 'runtime', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+    $director = trim(filter_input(INPUT_POST, 'director', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+    $actors = trim(filter_input(INPUT_POST, 'actors', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+    $selectedCategoryId = trim(filter_input(INPUT_POST, 'category', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
 
 
     // Identify categories to be added and removed

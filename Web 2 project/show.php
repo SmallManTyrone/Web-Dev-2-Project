@@ -7,26 +7,6 @@ function convertSpacesToDashes($text) {
     return str_replace(' ', '-', $text);
 }
 
-// Function to validate and extract ID and slug from the URL
-function validateAndGetIdAndSlug() {
-    $requestUrl = $_SERVER['REQUEST_URI'];
-    $pattern = '/^\/page\/(\d+)\/([a-z0-9-]+)\/$/';
-
-    if (preg_match($pattern, $requestUrl, $matches)) {
-        $id = $matches[1];
-        $slug = $matches[2];
-
-        // Check if the ID or slug text has been changed
-        // If changed, handle accordingly (e.g., redirect to an error page)
-        // For simplicity, we will just return the values here
-        return ['id' => $id, 'slug' => $slug];
-    } else {
-        // Redirect to an error page for invalid URLs
-        header("Location: /error-page");
-        exit;
-    }
-}
-
 
 function displayComments($conn, $movieId)
 {
@@ -133,6 +113,49 @@ if (isset($_GET['id'])) {
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <link rel='stylesheet' href='styles.css'>
     <script src="tinymce\js\tinymce\tinymce.min.js"></script>
+    <script>
+function submitForm() {
+    var editorContent = tinymce.get('comment').getContent();
+
+    // Use DOMParser to extract text content from HTML
+    var parser = new DOMParser();
+    var doc = parser.parseFromString(editorContent, 'text/html');
+    var textContent = doc.body.textContent || '';
+
+    // Replace &nbsp; entities with an empty string
+    textContent = textContent.replace(/&nbsp;/g, '');
+
+    // Remove extra whitespaces (including leading and trailing) within the text
+    textContent = textContent.replace(/\s+/g, ' ').trim();
+
+    console.log('Editor Content:', editorContent);
+    console.log('Trimmed Content:', textContent);
+
+    if (!textContent) {
+        alert('Please enter a non-empty comment.');
+        return false; // Prevent form submission
+    }
+
+    console.log('Form will be submitted.'); // Debug statement
+
+    return true; // Allow form submission
+}
+
+
+
+    document.addEventListener('DOMContentLoaded', function () {
+        tinymce.init({
+            selector: '#comment',
+            plugins: 'autoresize',
+            autoresize_bottom_margin: 16,
+            menubar: false
+        });
+
+        document.querySelector('form').addEventListener('submit', function (event) {
+            // This event listener is unnecessary. You can remove it.
+        });
+    });
+</script>
     <title>Movie Details</title>
 </head>
 
@@ -179,11 +202,11 @@ if (isset($_GET['id'])) {
         </div>
         <!-- Comment Form -->
         <div class='comment-form'>
-        <h2>Add a Comment</h2>
-        <form action='post_comment.php' method='post' onsubmit='return submitForm();'>
-    <input type='hidden' name='movie_id' value='<?= $movieId; ?>'>
-    <label for='name'>Name:</label>
-    <?php
+            <h2>Add a Comment</h2>
+            <form action='post_comment.php' method='post' onsubmit='return submitForm();'>
+                <input type='hidden' name='movie_id' value='<?= $movieId; ?>'>
+                <label for='name'>Name:</label>
+                <?php
     if (isset($_SESSION['username'])) {
         $username = $_SESSION['username'];
         echo "<input type='text' id='name' name='name' value='$username' readonly>";
@@ -191,41 +214,15 @@ if (isset($_GET['id'])) {
         echo "<input type='text' id='name' name='name'>";
     }
     ?>
-    <label for='comment'>Comment:</label>
-    <textarea id='comment' name='comment'></textarea>
-    <button type='submit' name='submitComment'>Submit Comment</button>
-</form>
-<script>
-    tinymce.init({
-        selector: '#comment',
-        plugins: 'autoresize',
-        autoresize_bottom_margin: 16,
-        menubar: false
-    });
-
-    function submitForm() {
-    // Trigger a manual save of TinyMCE content to the textarea before form submission
-    tinymce.triggerSave();
-
-    // Check if the TinyMCE editor is empty
-    var editorContent = tinymce.get('comment').getContent();
-    if (!editorContent.trim()) {
-        alert('Please enter a comment.'); // You can replace this with your own error handling
-        return false; // Prevent form submission
-    }
-
-    // Continue with other validations, if any
-    return validateCaptcha(); // Assuming validateCaptcha() is your validation function
-}
-
-</script>
+                <label for='comment'>Comment:</label>
+                <textarea id='comment' name='comment'></textarea>
+                <button type='submit' name='submitComment'>Submit Comment</button>
+            </form>
 
 
 
-
-
-        <?php displayComments($conn, $movieId); ?>
-    </div>
+            <?php displayComments($conn, $movieId); ?>
+        </div>
 </body>
 
 </html>
@@ -242,4 +239,3 @@ if (isset($_GET['id'])) {
     header("Location:index.php");
 }
 ?>
-

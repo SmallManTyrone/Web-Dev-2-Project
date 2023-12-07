@@ -107,24 +107,6 @@ if (isset($_POST['create_movie'])) {
     }
 }
 
-// Create Genre (Create)
-if (isset($_POST['create_genre'])) {
-    // Process genre creation form submission
-    $genreName = $_POST['genre_name'];
-
-    // Sanitize the genre name using the filter_var function
-    $genreName = filter_var($genreName, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-
-    $sql = "INSERT INTO genre (name) VALUES (?)";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $genreName);
-
-    if ($stmt->execute()) {
-        echo "Genre created successfully.";
-    } else {
-        echo "Error creating genre: " . $stmt->error;
-    }
-}
 
 // Fetch existing posts from the database with only title and picture
 $postsResult = $conn->query("SELECT * FROM movie");
@@ -140,16 +122,33 @@ if (isset($_GET['delete_category'])) {
     // Process category deletion
     $categoryId = $_GET['delete_category'];
 
-    $sql = "DELETE FROM categories WHERE category_id=?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $categoryId);
+    // Check if there are dependencies in the movie_category table
+    $checkSql = "SELECT COUNT(*) FROM movie_category WHERE category_id=?";
+    $checkStmt = $conn->prepare($checkSql);
+    $checkStmt->bind_param("i", $categoryId);
+    $checkStmt->execute();
+    $checkStmt->bind_result($rowCount);
+    $checkStmt->fetch();
+    $checkStmt->close();
 
-    if ($stmt->execute()) {
-        echo "Category deleted successfully.";
+    if ($rowCount > 0) {
+        echo "Cannot delete the category because it is associated with movies. Please update or delete related movie records first.";
     } else {
-        echo "Error deleting category: " . $stmt->error;
+        // If no dependencies, proceed with category deletion
+        $deleteSql = "DELETE FROM categories WHERE category_id=?";
+        $deleteStmt = $conn->prepare($deleteSql);
+        $deleteStmt->bind_param("i", $categoryId);
+
+        if ($deleteStmt->execute()) {
+            echo "Category deleted successfully.";
+        } else {
+            echo "Error deleting category: " . $deleteStmt->error;
+        }
+
+        $deleteStmt->close();
     }
 }
+
 
 // Re-fetch categories after deletion
 $categoriesResult = $conn->query("SELECT * FROM categories");
